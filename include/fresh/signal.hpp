@@ -135,6 +135,26 @@ namespace fresh
         mutable std::unique_lock<std::mutex>    _lock;
     };
     
+    class connection_guard
+    {
+    public:
+        
+        connection_guard(const connection& cnxn) :
+            _connection(cnxn)
+        {
+            
+        }
+        
+        ~connection_guard()
+        {
+            printf("deleting connection %p\n", &_connection);
+            _connection.disconnect();
+        }
+        
+    private:
+        connection  _connection;
+    };
+    
     class signal_interface
     {
     public:

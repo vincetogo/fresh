@@ -11,23 +11,30 @@
 #include "assignable.hpp"
 #include "signaller.hpp"
 
+#include <vector>
+
 namespace fresh
 {
     template <class OwnerType, class SignalInfo>
     struct dynamic;
+    
+    template<class PropertyType>
+    struct function_params;
     
     namespace property_details
     {
         template <typename T, typename D>
         struct getter
         {
-            using type = T& (D::*)();
+            using type = T (D::*)() const;
+            using result_type = T;
         };
         
         template <typename T, typename D>
-        struct getter<const T, D>
+        struct getter<T&, D>
         {
-            using type = const T& (D::*)();
+            using type = const T& (D::*)() const;
+            using result_type = const T&;
         };
         
         template <typename T, typename D>
@@ -37,69 +44,87 @@ namespace fresh
         };
         
         template <typename T, typename D>
-        struct setter<const T, D>
+        struct setter<T&, D>
         {
             using type = void (D::*)(const T&);
         };
-        
-        template <class T, class D, typename getter<T, D>::type Getter>
-        class gettable
+                
+        template <class T, class D, class SignalInfo, typename getter<T, D>::type Getter>
+        class gettable : public signaller<T, SignalInfo>
         {
         public:
             
-            gettable(D* host) :
+            template<class... Properties>
+            gettable(D* host, Properties&... properties) :
                 _host(host)
             {
-                
+                connect_to_properties(properties...);
             }
             
-            T& operator()()
+            gettable(const gettable&) = delete;
+            
+            auto operator()() const -> typename getter<T,D>::result_type
             {
                 return (_host->*Getter)();
             }
             
-            const T& operator()() const
-            {
-                return (_host->*Getter)();
-            }
-            
-            bool operator == (const T& other)
+            bool operator == (typename reference<T>::const_type other)
             {
                 return (*this) == other;
             }
             
-            bool operator != (const T& other)
+            bool operator != (typename reference<T>::const_type other)
             {
                 return !(*this) == other;
             }
         
         protected:
-            D*  _host;
             
-        private:
-            gettable(const gettable&);
+            template <class Property, class... Properties>
+            void
+            connect_to_properties(Property& first, Properties&... rest)
+            {
+                auto cnxn = first.connect(
+                    [=]()
+                    {
+                        this->send();
+                    }
+                    );
+                
+                _propertyConnections.emplace_back(cnxn);
+                
+                connect_to_properties(rest...);
+            }
+            
+            void
+            connect_to_properties()
+            {
+            }
+            
+            D*  _host;
+            std::vector<connection_guard> _propertyConnections;
         };
         
-        template <class T, class D,
+        template <class T, class D, class SignalInfo,
                   typename getter<T, D>::type Getter,
                   typename setter<T, D>::type Setter>
-        class settable : public gettable<T, D, Getter>,
-            assignable<T, settable<T, D, Getter, Setter>>
+        class settable : public gettable<T, D, SignalInfo, Getter>,
+            assignable<T, settable<T, D, SignalInfo, Getter, Setter>>
         {
         public:
             
             using assignable_base =
-            assignable<T, settable<T, D, Getter, Setter>>;
+            assignable<T, settable<T, D, SignalInfo, Getter, Setter>>;
             
-            using gettable<T, D, Getter>::gettable;
+            using gettable<T, D, SignalInfo, Getter>::gettable;
             using assignable_base::operator=;
             
         private:
             friend assignable_base;
             
-            void assign(const T& rhs)
+            void assign(typename reference<T>::const_type rhs)
             {
-                (gettable<T, D, Getter>::_host->*Setter)(rhs);
+                (gettable<T, D, SignalInfo, Getter>::_host->*Setter)(rhs);
             }
         };
         
@@ -117,13 +142,12 @@ namespace fresh
                             <typename getter<T, D>::type, Getter>,
                            std::integral_constant
                             <typename setter<T, D>::type, Setter>> :
-            public settable<T, D, Getter, Setter>,
-            public signaller<T, SignalInfo, D>
+            public settable<T, D, SignalInfo, Getter, Setter>
         {
         public:
             
-            using settable<T, D, Getter, Setter>::settable;
-            using settable<T, D, Getter, Setter>::operator=;
+            using settable<T, D, SignalInfo, Getter, Setter>::settable;
+            using settable<T, D, SignalInfo, Getter, Setter>::operator=;
         };
         
         template <class T,
@@ -135,10 +159,10 @@ namespace fresh
                             <typename getter<T, D>::type, Getter>,
                            std::integral_constant
                             <typename setter<T, D>::type, nullptr>> :
-        public gettable<T, D, Getter>
+            public gettable<T, D, SignalInfo, Getter>
         {
         public:
-            using gettable<T, D, Getter>::gettable;
+            using gettable<T, D, SignalInfo, Getter>::gettable;
         };
     }    
 }

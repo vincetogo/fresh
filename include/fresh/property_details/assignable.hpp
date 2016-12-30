@@ -14,13 +14,27 @@ namespace fresh
 {
     namespace property_details
     {
+        template <typename T>
+        struct reference
+        {
+            using type = T&;
+            using const_type = const T&;
+        };
+        
+        template <typename T>
+        struct reference<T&>
+        {
+            using type = T&;
+            using const_type = const T&;
+        };
+
         template <class T, class Impl>
         class assignable
         {
         public:
             
             Impl&
-            operator += (const T& rhs)
+            operator += (typename reference<T>::const_type rhs)
             {
                 return operator=((*(Impl*)this)() + rhs);
             }
@@ -40,7 +54,7 @@ namespace fresh
             }
             
             Impl&
-            operator -= (const T& rhs)
+            operator -= (typename reference<T>::const_type rhs)
             {
                 return operator=((*(Impl*)this)() - rhs);
             }
@@ -62,7 +76,7 @@ namespace fresh
         protected:
             
             Impl&
-            operator = (const T& rhs)
+            operator = (typename reference<T>::const_type rhs)
             {
                 ((Impl*)this)->assign(rhs);
                 return *(Impl*)this;
