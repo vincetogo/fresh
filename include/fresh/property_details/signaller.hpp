@@ -45,32 +45,6 @@ namespace fresh
             }
         };
         
-        template <template <class S, class C> class SignalInfo, class SignalType>
-        class signaller_base<SignalInfo<SignalType, void>>
-        {
-        protected:
-            
-            SignalType  _onChanged;
-            
-        public:
-            
-            using connection_type = void;
-            using signal_info = SignalInfo<SignalType, void>;
-            using signal_type = SignalType;
-            
-            template <class... Args>
-            void
-            connect(const std::function<void()>& fn, Args... args)
-            {
-                signal_info::connect(_onChanged, fn, args...);
-            }
-            
-            void disconnect_all()
-            {
-                signal_info::disconnect_all(_onChanged);
-            }
-        };
-        
         class any_class
         {
         };

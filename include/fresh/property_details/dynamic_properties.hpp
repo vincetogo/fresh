@@ -63,6 +63,14 @@ namespace fresh
             
             gettable(const gettable&) = delete;
             
+            ~gettable()
+            {
+                for (auto& cnxn : _propertyConnections)
+                {
+                    SignalInfo::disconnect(cnxn);
+                }
+            }
+            
             auto operator()() const -> typename getter<T,D>::result_type
             {
                 return (_host->*Getter)();
@@ -88,8 +96,7 @@ namespace fresh
                     [=]()
                     {
                         this->send();
-                    }
-                    );
+                    });
                 
                 _propertyConnections.emplace_back(cnxn);
                 
@@ -102,7 +109,7 @@ namespace fresh
             }
             
             D*  _host;
-            std::vector<connection_guard> _propertyConnections;
+            std::vector<connection> _propertyConnections;
         };
         
         template <class T, class D, class SignalInfo,

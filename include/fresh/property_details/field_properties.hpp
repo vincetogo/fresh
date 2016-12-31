@@ -30,6 +30,11 @@ namespace fresh
             {
             }
             
+            readable_field(const readable_field& other) :
+                _value(other())
+            {
+            }
+            
             readable_field(std::nullptr_t) :
                 _value(nullptr)
             {
@@ -37,11 +42,17 @@ namespace fresh
             
             const T& operator () () const
             {
+                FRESH_LOCK_GUARD(_mutex);
+                
                 return _value;
             }
             
             bool operator == (const T& other) const
             {
+                if (&other == this) return true;
+                
+                FRESH_LOCK_GUARD(_mutex);
+
                 return _value == other;
             }
             
@@ -51,8 +62,8 @@ namespace fresh
             }
             
         protected:
-            
-            T  _value;
+            mutable std::mutex  _mutex;
+            T                   _value;
         };
         
         template <typename T>
@@ -77,9 +88,21 @@ namespace fresh
             void
             assign(const T& rhs)
             {
-                if (AssignmentTest(readable_field<T>::_value, rhs))
+                bool didAssign = false;
+                
                 {
-                    readable_field<T>::_value = rhs;
+                    FRESH_LOCK_GUARD(base::_mutex);
+                    
+                    if (AssignmentTest(readable_field<T>::_value, rhs))
+                    {
+                        readable_field<T>::_value = rhs;
+                        
+                        didAssign = true;
+                    }
+                }
+                
+                if (didAssign)
+                {
                     ((Impl*)this)->on_assign();
                 }
             }

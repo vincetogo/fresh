@@ -25,12 +25,20 @@ namespace fresh
     struct default_signal : signal_info<signal<void()>, connection>
     {
         template<class... Args>
-        static connection connect(signal_type& sig, const std::function<void()>& fn, Args... args)
+        static connection
+        connect(signal_type& sig, const std::function<void()>& fn, Args... args)
         {
             return sig.connect(fn);
         }
         
-        static void disconnect_all(signal_type& sig)
+        static void
+        disconnect(connection& cnxn)
+        {
+            cnxn.disconnect();
+        }
+        
+        static void
+        disconnect_all(signal_type& sig)
         {
             sig.disconnect_all();
         }

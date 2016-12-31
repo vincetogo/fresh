@@ -22,33 +22,33 @@
 
 namespace fresh
 {
+    class connection;
     class signal_interface;
     
-    class connection
+    namespace signal_details
     {
-    
-    private:
-        class details
+        class connection_data
         {
         public:
-            
-            details(void* function, signal_interface* signal) :
+            connection_data(void* function, signal_interface* signal) :
                 _function(function),
+                _mutex(),
                 _signal(signal),
                 _valid(true)
             {}
             
-            details(const details& rhs) :
-                _function(rhs._function),
-                _signal(rhs._signal),
-                _valid(rhs._valid)
-            {}
-            
+        private:
+            friend connection;
+
             void*               _function;
+            mutable std::mutex  _mutex;
             signal_interface*   _signal;
             bool                _valid;
         };
-        
+    }
+    
+    class connection
+    {
     public:
         connection() :
             _details(),
@@ -57,10 +57,12 @@ namespace fresh
         {}
         
         connection(void* function, signal_interface* signal) :
-            _details(new details(function, signal)),
+            _details(),
             _mutex(),
             _lock(_mutex, std::defer_lock)
-        {}
+        {
+            _details = std::make_shared<signal_details::connection_data>(function, signal);
+        }
         
         connection(const connection& rhs) :
             _details(rhs._details),
@@ -82,6 +84,8 @@ namespace fresh
         
         bool operator < (const connection& rhs) const
         {
+            if (&rhs == this) return false;
+            
             FRESH_NAMED_LOCK_GUARD(lock1, lock());
             FRESH_NAMED_LOCK_GUARD(lock2, rhs.lock());
             
@@ -103,13 +107,16 @@ namespace fresh
         template <typename slot>
         const slot& function() const
         {
-            assert(_lock.owns_lock());
+            // because this returns a reference, it is only valid while
+            // the mutex remains locked by the caller
+ 
+            assert(lock().owns_lock());
             return *reinterpret_cast<slot*>(_details->_function);
         }
         
         bool is_valid() const
         {
-            assert(_lock.owns_lock());
+            assert(lock().owns_lock());
             return _details ? _details->_valid : false;
         }
         
@@ -122,6 +129,7 @@ namespace fresh
         void clear()
         {
             FRESH_LOCK_GUARD(lock());
+            FRESH_NAMED_LOCK_GUARD(lock2, _details->_mutex);
             
             delete(reinterpret_cast<slot*>(_details->_function));
             
@@ -130,29 +138,9 @@ namespace fresh
         
     private:
         
-        std::shared_ptr<details>                _details;
-        mutable std::mutex                      _mutex;
-        mutable std::unique_lock<std::mutex>    _lock;
-    };
-    
-    class connection_guard
-    {
-    public:
-        
-        connection_guard(const connection& cnxn) :
-            _connection(cnxn)
-        {
-            
-        }
-        
-        ~connection_guard()
-        {
-            printf("deleting connection %p\n", &_connection);
-            _connection.disconnect();
-        }
-        
-    private:
-        connection  _connection;
+        std::shared_ptr<signal_details::connection_data>    _details;
+        mutable std::mutex                                  _mutex;
+        mutable std::unique_lock<std::mutex>                _lock;
     };
     
     class signal_interface
@@ -385,23 +373,21 @@ namespace fresh
     void
     signal_base<R(Arg...)>::clean()
     {
-        if (!_canClean || _invalidSlots.empty()) return;
+        FRESH_LOCK_GUARD(_mutex);
+
+        if (!_canClean) return;
         
+        for (auto& slot : _invalidSlots)
         {
-            FRESH_LOCK_GUARD(_mutex);
-            
-            for (auto& slot : _invalidSlots)
-            {
-                _slots.erase(std::find(_slots.begin(), _slots.end(), slot));
-            }
-            
-            _invalidSlots.clear();
+            _slots.erase(std::find(_slots.begin(), _slots.end(), slot));
         }
-        
+    
         for (auto& cnxn : _invalidSlots)
         {
             cnxn.template clear<slot>();
         }
+        
+        _invalidSlots.clear();
     }
     
     template <typename R, typename... Arg>
