@@ -9,6 +9,7 @@
 #define fresh_property_details_field_properties_hpp
 
 #include "assignable.hpp"
+#include "format.hpp"
 #include "signaller.hpp"
 
 namespace fresh
@@ -25,7 +26,7 @@ namespace fresh
             {
             }
             
-            readable_field(const T& value) :
+            readable_field(typename format<T>::arg_type value) :
                 _value(value)
             {
             }
@@ -40,14 +41,14 @@ namespace fresh
             {
             }
             
-            const T& operator () () const
+            typename format<T>::result_type operator () () const
             {
                 FRESH_LOCK_GUARD(_mutex);
                 
                 return _value;
             }
             
-            bool operator == (const T& other) const
+            bool operator == (typename format<T>::arg_type other) const
             {
                 if (&other == this) return true;
                 
@@ -56,18 +57,19 @@ namespace fresh
                 return _value == other;
             }
             
-            bool operator != (const T& other) const
+            bool operator != (typename format<T>::arg_type other) const
             {
                 return !operator==(other);
             }
             
         protected:
-            mutable std::mutex  _mutex;
-            T                   _value;
+            mutable std::mutex              _mutex;
+            typename format<T>::value_type  _value;
         };
         
         template <typename T>
-        using assignment_test_t = bool (*)(const T& currValue, const T& newValue);
+        using assignment_test_t = bool (*)(const typename format<T>::value_type& currValue,
+                                           const typename format<T>::value_type& newValue);
         
         template <class T,
                   assignment_test_t<T> AssignmentTest,
@@ -86,7 +88,7 @@ namespace fresh
             friend assignable<T, writable_field_base<T, AssignmentTest, Impl>>;
             
             void
-            assign(const T& rhs)
+            assign(typename format<T>::arg_type rhs)
             {
                 bool didAssign = false;
                 
@@ -126,7 +128,7 @@ namespace fresh
             {
             }
             
-            writable_field(const T& other) :
+            writable_field(typename format<T>::arg_type other) :
                 base(other)
             {
             }

@@ -53,7 +53,9 @@ namespace fresh
     template <class T>
     struct assign_always
     {
-        constexpr static bool test(const T& currValue, const T& newValue)
+        using value_type = typename property_details::format<T>::value_type;
+
+        constexpr static bool test(const value_type&, const value_type&)
         {
             return true;
         }
@@ -62,7 +64,9 @@ namespace fresh
     template <class T>
     struct assign_different
     {
-        static bool test(const T& currValue, const T& newValue)
+        using value_type = typename property_details::format<T>::value_type;
+        
+        static bool test(const value_type& currValue, const value_type& newValue)
         {
             return currValue != newValue;
         }
@@ -71,7 +75,9 @@ namespace fresh
     template <class T>
     struct assign_never
     {
-        constexpr static bool test(const T& currValue, const T& newValue)
+        using value_type = typename property_details::format<T>::value_type;
+        
+        constexpr static bool test(const value_type&, const value_type&)
         {
             return false;
         }

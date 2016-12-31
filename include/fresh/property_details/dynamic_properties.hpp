@@ -27,14 +27,12 @@ namespace fresh
         struct getter
         {
             using type = T (D::*)() const;
-            using result_type = T;
         };
         
         template <typename T, typename D>
         struct getter<T&, D>
         {
             using type = const T& (D::*)() const;
-            using result_type = const T&;
         };
         
         template <typename T, typename D>
@@ -71,17 +69,17 @@ namespace fresh
                 }
             }
             
-            auto operator()() const -> typename getter<T,D>::result_type
+            auto operator()() const -> typename format<T>::result_type
             {
                 return (_host->*Getter)();
             }
             
-            bool operator == (typename reference<T>::const_type other)
+            bool operator == (typename format<T>::arg_type other)
             {
                 return (*this) == other;
             }
             
-            bool operator != (typename reference<T>::const_type other)
+            bool operator != (typename format<T>::arg_type other)
             {
                 return !(*this) == other;
             }
@@ -129,7 +127,7 @@ namespace fresh
         private:
             friend assignable_base;
             
-            void assign(typename reference<T>::const_type rhs)
+            void assign(typename format<T>::arg_type rhs)
             {
                 (gettable<T, D, SignalInfo, Getter>::_host->*Setter)(rhs);
             }
