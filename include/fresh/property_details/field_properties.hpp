@@ -11,6 +11,9 @@
 #include "assignable.hpp"
 #include "format.hpp"
 #include "signaller.hpp"
+#include "../threads.hpp"
+
+#include <shared_mutex>
 
 namespace fresh
 {
@@ -43,7 +46,7 @@ namespace fresh
             
             typename format<T>::result_type operator () () const
             {
-                FRESH_LOCK_GUARD(_mutex);
+                FRESH_SHARED_GUARD(_mutex);
                 
                 return _value;
             }
@@ -52,7 +55,7 @@ namespace fresh
             {
                 if (&other == this) return true;
                 
-                FRESH_LOCK_GUARD(_mutex);
+                FRESH_SHARED_GUARD(_mutex);
 
                 return _value == other;
             }
@@ -63,7 +66,7 @@ namespace fresh
             }
             
         protected:
-            mutable std::mutex              _mutex;
+            mutable std::shared_timed_mutex _mutex;
             typename format<T>::value_type  _value;
         };
         
@@ -93,7 +96,7 @@ namespace fresh
                 bool didAssign = false;
                 
                 {
-                    FRESH_LOCK_GUARD(base::_mutex);
+                    FRESH_UNIQUE_GUARD(base::_mutex);
                     
                     if (AssignmentTest(readable_field<T>::_value, rhs))
                     {

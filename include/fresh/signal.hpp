@@ -8,6 +8,8 @@
 #ifndef fresh_signal_hpp
 #define fresh_signal_hpp
 
+#include "threads.hpp"
+
 #include <assert.h>
 
 #include <functional>
@@ -15,10 +17,6 @@
 #include <mutex>
 #include <thread>
 #include <vector>
-
-#define FRESH_NAMED_LOCK_GUARD(name, x)  std::lock_guard<decltype(x)> name(x);
-
-#define FRESH_LOCK_GUARD(x)  FRESH_NAMED_LOCK_GUARD(fresh_lock_guard, x);
 
 namespace fresh
 {
