@@ -227,260 +227,219 @@ namespace fresh
         };
     }
     
-    template <typename T>
+    template <class T, template <class C> class Allocator>
     class signal_base;
     
-    template <typename R, typename... Arg>
-    class signal_base<R(Arg...)> : public signal_interface
+    template <template <class C> class Allocator, class R, class... Arg>
+    class signal_base<R(Arg...), Allocator> : public signal_interface
     {
     public:
         using slot = std::function<R(Arg...)>;
         
-        signal_base();
-        signal_base(const signal_base& other) = delete;
+        signal_base() :
+            _slots()
+        {
+            
+        }
         
-        virtual ~signal_base();
+        virtual ~signal_base()
+        {
+            disconnect_all();
+        }
         
-        connection connect(const slot& fn);
+        connection connect(const slot& fn)
+        {
+            clean();
+            
+            slot* fnCopy = new slot(fn);
+            
+            connection result(fnCopy, this);
+            
+            {
+                FRESH_LOCK_GUARD(_mutex);
+                
+                _slots.push_back(result);
+            }
+            
+            return result;
+        }
         
-        bool connected() const;
+        bool connected() const
+        {
+            FRESH_LOCK_GUARD(_mutex);
+            
+            return !_slots.empty();
+        }
         
-        void disconnect_all();
+        void disconnect_all()
+        {
+            bool oldCanClean;
+            std::vector<connection> cnxns;
+            
+            {
+                FRESH_LOCK_GUARD(_mutex);
+                
+                for (const auto& cnxn : _slots)
+                {
+                    cnxns.push_back(cnxn);
+                }
+                
+                oldCanClean = _canClean;
+                _canClean = false;
+            }
+            
+            for (auto& cnxn : cnxns)
+            {
+                cnxn.disconnect();
+            }
+            
+            {
+                FRESH_LOCK_GUARD(_mutex);
+                _canClean = oldCanClean;
+            }
+            
+            clean();
+        }
         
     protected:
         
         template<class Callable>
-        void call(Callable forEach, Arg... args);
+        void call(Callable forEach, Arg... args)
+        {
+            std::vector<connection> slots;
+            
+            bool oldCanClean;
+            
+            {
+                FRESH_LOCK_GUARD(_mutex);
+                slots = _slots;
+                
+                oldCanClean = _canClean;
+                _canClean = false;
+            }
+            
+            for (auto& cnxn : slots)
+            {
+                signal_details::caller<R, Arg...>::call(cnxn, forEach, args...);
+            }
+            
+            {
+                FRESH_LOCK_GUARD(_mutex);
+                _canClean = oldCanClean;
+            }
+            
+            clean();
+        }
         
     private:
         
         friend void connection::disconnect() const;
         
-        void clean();
-        void disconnect(const connection& cnxn);
-        
-        bool                    _canClean = true;
-        std::vector<connection> _invalidSlots;
-        mutable std::mutex      _mutex;
-        std::vector<connection> _slots;
-    };
-    
-    template <typename R, typename... Arg>
-    signal_base<R(Arg...)>::signal_base() :
-        _slots()
-    {
-    }
-    
-    template <typename R, typename... Arg>
-    signal_base<R(Arg...)>::~signal_base()
-    {
-        disconnect_all();
-    }
-    
-    template <typename R, typename... Arg>
-    connection
-    signal_base<R(Arg...)>::connect(const slot& fn)
-    {
-        clean();
-        
-        slot* fnCopy = new slot(fn);
-        
-        connection result(fnCopy, this);
-        
+        void clean()
         {
             FRESH_LOCK_GUARD(_mutex);
             
-            _slots.push_back(result);
-        }
-        
-        return result;
-    }
-    
-    template <typename R, typename... Arg>
-    bool
-    signal_base<R(Arg...)>::connected() const
-    {
-        FRESH_LOCK_GUARD(_mutex);
-        
-        return !_slots.empty();
-    }
-    
-    template <typename R, typename... Arg>
-    void
-    signal_base<R(Arg...)>::disconnect_all()
-    {
-        bool oldCanClean;
-        std::vector<connection> cnxns;
-        
-        {
-            FRESH_LOCK_GUARD(_mutex);
+            if (!_canClean) return;
             
-            for (const auto& cnxn : _slots)
+            for (auto& slot : _invalidSlots)
             {
-                cnxns.push_back(cnxn);
+                _slots.erase(std::find(_slots.begin(), _slots.end(), slot));
             }
             
-            oldCanClean = _canClean;
-            _canClean = false;
-        }
-        
-        for (auto& cnxn : cnxns)
-        {
-            cnxn.disconnect();
-        }
-        
-        {
-            FRESH_LOCK_GUARD(_mutex);
-            _canClean = oldCanClean;
-        }
-        
-        clean();
-    }
-    
-    template <typename R, typename... Arg>
-    template<class Callable>
-    void
-    signal_base<R(Arg...)>::call(Callable forEach, Arg... args)
-    {
-        std::vector<connection> slots;
-        
-        bool oldCanClean;
-        
-        {
-            FRESH_LOCK_GUARD(_mutex);
-            slots = _slots;
+            for (auto& cnxn : _invalidSlots)
+            {
+                cnxn.template clear<slot>();
+            }
             
-            oldCanClean = _canClean;
-            _canClean = false;
+            _invalidSlots.clear();
         }
         
-        for (auto& cnxn : slots)
+        void disconnect(const connection& cnxn)
         {
-            signal_details::caller<R, Arg...>::call(cnxn, forEach, args...);
+            assert(!cnxn.is_valid());
+            
+            {
+                FRESH_LOCK_GUARD(_mutex);
+                _invalidSlots.push_back(cnxn);
+            }
+            
+            clean();
         }
         
-        {
-            FRESH_LOCK_GUARD(_mutex);
-            _canClean = oldCanClean;
-        }
-        
-        clean();
-    }
+        bool                                            _canClean = true;
+        std::vector<connection, Allocator<connection>>  _invalidSlots;
+        mutable std::mutex                              _mutex;
+        std::vector<connection, Allocator<connection>>  _slots;
+    };
     
-    template <typename R, typename... Arg>
-    void
-    signal_base<R(Arg...)>::clean()
-    {
-        FRESH_LOCK_GUARD(_mutex);
-
-        if (!_canClean) return;
-        
-        for (auto& slot : _invalidSlots)
-        {
-            _slots.erase(std::find(_slots.begin(), _slots.end(), slot));
-        }
-    
-        for (auto& cnxn : _invalidSlots)
-        {
-            cnxn.template clear<slot>();
-        }
-        
-        _invalidSlots.clear();
-    }
-    
-    template <typename R, typename... Arg>
-    void
-    signal_base<R(Arg...)>::disconnect(const connection& cnxn)
-    {
-        assert(!cnxn.is_valid());
-        
-        {
-            FRESH_LOCK_GUARD(_mutex);
-            _invalidSlots.push_back(cnxn);
-        }
-        
-        clean();
-    }
-    
-    template <typename T>
+    template <class T, template <class C> class Allocator = std::allocator>
     class signal;
     
-    template <typename R, typename... Arg>
-    class signal<R(Arg...)> : public signal_base<R(Arg...)>
+    template <template <class C> class Allocator, typename R, typename... Arg>
+    class signal<R(Arg...), Allocator> : public signal_base<R(Arg...), Allocator>
     {
-        using base = signal_base<R(Arg...)>;
+        using base = signal_base<R(Arg...), Allocator>;
         
     public:
 
         using slot = std::function<R(Arg...)>  ;
 
-        std::vector<R> operator()(Arg... args);
+        std::vector<R> operator()(Arg... args)
+        {
+            std::vector<R> result;
+            
+            auto forEach =
+            [&](const R& value)
+            {
+                result.push_back(value);
+            };
+            
+            base::call(forEach, args...);
+            
+            return result;
+        }
     };
     
-    template <class R, class... Arg>
-    std::vector<R>
-    signal<R(Arg...)>::operator()(Arg... args)
+    template <template <class C> class Allocator, typename... Arg>
+    class signal<void(Arg...), Allocator> : public signal_base<void(Arg...), Allocator>
     {
-        std::vector<R> result;
-        
-        auto forEach =
-        [&](const R& value)
-        {
-            result.push_back(value);
-        };
-        
-        base::call(forEach, args...);
-        
-        return result;
-    }
-    
-    template <typename... Arg>
-    class signal<void(Arg...)> : public signal_base<void(Arg...)>
-    {
-        using base = signal_base<void(Arg...)>;
+        using base = signal_base<void(Arg...), Allocator>;
         
     public:
         
         using slot = std::function<void(Arg...)>;
         
-        void operator()(Arg... args);
+        void operator()(Arg... args)
+        {
+            base::call(nullptr, args...);
+        }
     };
     
-    template <typename... Arg>
-    void
-    signal<void(Arg...)>::operator()(Arg... args)
+    template <template <class C> class Allocator>
+    class signal<void(), Allocator> : public signal_base<void(), Allocator>
     {
-        base::call(nullptr, args...);
-    }
-    
-    template <>
-    class signal<void()> : public signal_base<void()>
-    {
-        using base = signal_base<void()>;
+        using base = signal_base<void(), Allocator>;
         
     public:
         
         using slot = std::function<void()>;
         
-        void operator()();
-    };
-    
-    inline void
-    signal<void()>::operator()()
-    {
-        std::vector<std::thread> threads;
-        
-        base::call(
-           [&](std::thread& thread)
-           {
-               threads.push_back(std::move(thread));
-           });
-        
-        for (auto& thread : threads)
+        void operator()()
         {
-            thread.join();
+            std::vector<std::thread> threads;
+            
+            base::call(
+                       [&](std::thread& thread)
+                       {
+                           threads.push_back(std::move(thread));
+                       });
+            
+            for (auto& thread : threads)
+            {
+                thread.join();
+            }
         }
-    }
+    };
 }
 
 #endif
