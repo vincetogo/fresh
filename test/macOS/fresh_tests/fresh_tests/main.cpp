@@ -114,7 +114,7 @@ int main(int argc, const char * argv[])
     a.f4 -= 3.15f;
     a.f4 --;
     
-    a.another_a = std::make_shared<A>();
+    //a.another_a = std::make_shared<A>();
     
     printf("f3: %f\n", a.f3());
     

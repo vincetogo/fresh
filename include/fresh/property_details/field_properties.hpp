@@ -19,6 +19,20 @@ namespace fresh
 {
     namespace property_details
     {
+        template <class T, bool = std::is_integral<T>::value && !std::is_same<T, bool>::value>
+        struct readable_traits
+        {
+            using mutex_type = std::shared_timed_mutex;
+            using value_type = T;
+        };
+        
+        template <class T>
+        struct readable_traits<T, true>
+        {
+            using mutex_type = fresh::atomic_mutex;
+            using value_type = std::atomic<T>;
+        };
+        
         template <class T>
         class readable_field
         {
@@ -64,8 +78,9 @@ namespace fresh
             }
             
         protected:
-            mutable std::shared_timed_mutex _mutex;
-            typename format<T>::value_type  _value;
+            
+            mutable typename readable_traits<T>::mutex_type _mutex;
+            typename readable_traits<T>::value_type         _value;
         };
         
         template <typename T>
