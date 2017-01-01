@@ -53,8 +53,6 @@ namespace fresh
             
             bool operator == (typename format<T>::arg_type other) const
             {
-                if (&other == this) return true;
-                
                 FRESH_SHARED_GUARD(_mutex);
 
                 return _value == other;
