@@ -40,13 +40,19 @@ namespace fresh
     using shared_mutex = std::shared_timed_mutex;
     
     template <class T>
-    using shared_lock = std::shared_lock<T>;
+    using read_lock = std::shared_lock<T>;
+
+    template <class T>
+    using write_lock = std::unique_lock<T>;
 
 #else
     using shared_mutex = std::mutex;
     
     template <class T>
-    using shared_lock = std::lock_guard<T>;
+    using read_lock = std::lock_guard<T>;
+
+    template <class T>
+    using write_lock = std::lock_guard<T>;
 
 #endif
 
@@ -87,10 +93,10 @@ namespace std
 #define FRESH_NAMED_LOCK_GUARD(name, x)     FRESH_NAMED_LOCK(name, x, std::lock_guard)
 #define FRESH_LOCK_GUARD(x)                 FRESH_NAMED_LOCK_GUARD(fresh_lock_guard, x)
 
-#define FRESH_NAMED_SHARED_GUARD(name, x)   FRESH_NAMED_LOCK(name, x, fresh::shared_lock)
-#define FRESH_SHARED_GUARD(x)               FRESH_NAMED_SHARED_GUARD(fresh_shared_guard, x)
+#define FRESH_NAMED_READ_GUARD(name, x)     FRESH_NAMED_LOCK(name, x, fresh::read_lock)
+#define FRESH_READ_GUARD(x)                 FRESH_NAMED_READ_GUARD(fresh_read_guard, x)
 
-#define FRESH_NAMED_UNIQUE_GUARD(name, x)   FRESH_NAMED_LOCK(name, x, std::unique_lock)
-#define FRESH_UNIQUE_GUARD(x)               FRESH_NAMED_UNIQUE_GUARD(fresh_unique_lock, x)
+#define FRESH_NAMED_WRITE_GUARD(name, x)    FRESH_NAMED_LOCK(name, x, fresh::write_lock)
+#define FRESH_WRITE_GUARD(x)                FRESH_NAMED_WRITE_GUARD(fresh_unique_lock, x)
 
 #endif

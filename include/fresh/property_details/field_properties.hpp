@@ -60,14 +60,14 @@ namespace fresh
             
             typename format<T>::result_type operator () () const
             {
-                FRESH_SHARED_GUARD(_mutex);
+                FRESH_READ_GUARD(_mutex);
                 
                 return _value;
             }
             
             bool operator == (typename format<T>::arg_type other) const
             {
-                FRESH_SHARED_GUARD(_mutex);
+                FRESH_READ_GUARD(_mutex);
 
                 return _value == other;
             }
@@ -109,7 +109,7 @@ namespace fresh
                 bool didAssign = false;
                 
                 {
-                    FRESH_UNIQUE_GUARD(base::_mutex);
+                    FRESH_WRITE_GUARD(base::_mutex);
                     
                     if (AssignmentTest(readable_field<T>::_value, rhs))
                     {
