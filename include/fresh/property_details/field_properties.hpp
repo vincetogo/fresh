@@ -22,7 +22,7 @@ namespace fresh
         template <class T, bool = std::is_integral<T>::value && !std::is_same<T, bool>::value>
         struct readable_traits
         {
-            using mutex_type = std::shared_timed_mutex;
+            using mutex_type = fresh::shared_mutex;
             using value_type = T;
         };
         

@@ -29,12 +29,8 @@ namespace
         {
         }
         
-        void func()
-        {
-            // we can set f2 from within A
-            f2 = 4.0f;
-        }
-
+        property<std::shared_ptr<A>>                            another_a;
+        
         property<float, light>          f1 = 3;
         property<float, writable_by<A>> f2 = 3;
         property<int, read_only>        i1 = 14;
@@ -62,9 +58,13 @@ namespace
         }
         
         property<float, dynamic<A>, &A::get_f5>                 f5;
-
-        property<std::shared_ptr<A>>                            another_a;
         
+        void func()
+        {
+            // we can set f2 from within A
+            f2 = 4.0f;
+        }
+
     private:
         float _f3 = 2.0f;
     };
