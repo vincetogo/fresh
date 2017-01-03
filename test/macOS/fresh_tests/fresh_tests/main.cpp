@@ -51,7 +51,7 @@ namespace
         }
         
         property<float&, dynamic<A>, &A::get_f3, &A::set_f3>    f3;
-        property<float, writable<assign_different>>             f4 = 3.0f;
+        property<float>                                         f4 = 3.0f;
         
         float
         get_f5() const
@@ -104,7 +104,6 @@ int main(int argc, const char * argv[])
         a.f3 = 6.0f;
         
         a.f4 = 6.0f;
-        a.f4 = 6.0f; // f4 is assign_different and doesn't change here so no signal is sent
         a.f4 = 3.0f;
         a.f4 = 4.0f;
     }

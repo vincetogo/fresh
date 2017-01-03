@@ -98,40 +98,31 @@ namespace fresh
         using event_traits = EventTraits;
     };
     
-    template <template <class T> class AssignmentTest = assign_always,
-              class EventTraits = default_signal>
+    template <class EventTraits = default_signal>
     struct writable
     {
-        template <class T>
-        using assignment_test = AssignmentTest<T>;
-        
         using event_traits = EventTraits;
     };
     
     template <class W,
-              template <class T> class AssignmentTest = assign_always,
               class EventTraits = default_signal>
     struct writable_by
     {
     public:
         using writer = W;
         
-        template <class T>
-        using assignment_test = AssignmentTest<T>;
-        
         using event_traits = EventTraits;
     };
     
-    using light = writable<assign_always, null_signal>;
+    using light = writable<null_signal>;
 
     template <class OwnerType>
     using light_dynamic = dynamic<OwnerType, null_signal>;
     
-    template <template <class T> class AssignmentTest = assign_always>
-    using light_writable = writable<AssignmentTest, null_signal>;
+    using light_writable = writable<null_signal>;
     
-    template <class W, template <class T> class AssignmentTest = assign_always>
-    using light_writable_by = writable_by<W, AssignmentTest, null_signal>;
+    template <class W>
+    using light_writable_by = writable_by<W, null_signal>;
     
     template<class PropertyType>
     struct function_params;
@@ -171,14 +162,14 @@ namespace fresh
     {
     };
     
-    template<template <class T2> class AssignmentTest, class EventTraits>
-    struct function_params<writable<AssignmentTest, EventTraits>> :
+    template<class EventTraits>
+    struct function_params<writable<EventTraits>> :
         public field_function_params
     {
     };
     
-    template<class W, template <class T2> class AssignmentTest, class EventTraits>
-    struct function_params<writable_by<W, AssignmentTest, EventTraits>> :
+    template<class W, class EventTraits>
+    struct function_params<writable_by<W, EventTraits>> :
         public field_function_params
     {
     };
@@ -225,17 +216,16 @@ namespace fresh
     };
     
     template <class T,
-              template <class T2> class AssignmentTest,
               class EventTraits,
               bool Getter,
               bool Setter>
-    class property<T, writable<AssignmentTest, EventTraits>, Getter, Setter> :
-        public property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, property_details::any_class>
+    class property<T, writable<EventTraits>, Getter, Setter> :
+        public property_details::writable_field<T, EventTraits, property_details::any_class>
     {
         static_assert(!Getter && !Setter, "Invalid writable property declaration");
         
     public:
-        using base = property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, property_details::any_class>;
+        using base = property_details::writable_field<T, EventTraits, property_details::any_class>;
         
         using base::base;
         using base::operator=;
@@ -243,16 +233,15 @@ namespace fresh
     
     template <class T,
               class W,
-              template <class T2> class AssignmentTest,
               class EventTraits,
               bool Getter, bool Setter>
-    class property<T, writable_by<W, AssignmentTest, EventTraits>, Getter, Setter> :
-        public property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, W>
+    class property<T, writable_by<W, EventTraits>, Getter, Setter> :
+        public property_details::writable_field<T, EventTraits, W>
     {
         static_assert(!Getter && !Setter, "Invalid writable_by property declaration");
         
     public:
-        using base = property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, W>;
+        using base = property_details::writable_field<T, EventTraits, W>;
         
         using base::base;
         

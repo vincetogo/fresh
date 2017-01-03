@@ -83,13 +83,8 @@ namespace fresh
             mutable typename readable_traits<T>::mutex_type _mutex;
             typename readable_traits<T>::value_type         _value;
         };
-        
-        template <typename T>
-        using assignment_test_t = bool (*)(const typename format<T>::value_type& currValue,
-                                           const typename format<T>::value_type& newValue);
-        
+                
         template <class T,
-                  assignment_test_t<T> AssignmentTest,
                   class Impl>
         class writable_field_base :
             public readable_field<T>
@@ -102,42 +97,30 @@ namespace fresh
             void
             assign(typename format<T>::arg_type rhs)
             {
-                bool didAssign = false;
-                
                 {
                     FRESH_WRITE_GUARD(base::_mutex);
-                    
-                    if (AssignmentTest(readable_field<T>::_value, rhs))
-                    {
-                        readable_field<T>::_value = rhs;
-                        
-                        didAssign = true;
-                    }
+                    readable_field<T>::_value = rhs;
                 }
                 
-                if (didAssign)
-                {
-                    ((Impl*)this)->on_assign();
-                }
+                ((Impl*)this)->on_assign();
             }
         };
         
         template <class T,
-                  assignment_test_t<T> AssignmentTest,
                   class EventTraits,
                   class SignalFriend>
         class writable_field :
-            public writable_field_base<T, AssignmentTest,
-                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>,
+            public writable_field_base<T,
+                writable_field<T, EventTraits, SignalFriend>>,
             public assignable<typename readable_traits<T>::value_type,
-                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>,
+                writable_field<T, EventTraits, SignalFriend>>,
             public signaller<T, EventTraits, SignalFriend>
         {
         public:
-            using base = writable_field_base<T, AssignmentTest,
-                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>;
+            using base = writable_field_base<T,
+                writable_field<T, EventTraits, SignalFriend>>;
             using assignable_base = assignable<typename readable_traits<T>::value_type,
-                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>;
+                writable_field<T, EventTraits, SignalFriend>>;
             
             writable_field() :
                 base()
@@ -173,19 +156,18 @@ namespace fresh
         };
         
         template <class T,
-                  assignment_test_t<T> AssignmentTest,
                   class SignalFriend>
-        class writable_field<T, AssignmentTest, null_signal, SignalFriend> :
-            public writable_field_base<T, AssignmentTest,
-                writable_field<T, AssignmentTest, null_signal, SignalFriend>>,
+        class writable_field<T, null_signal, SignalFriend> :
+            public writable_field_base<T,
+                writable_field<T, null_signal, SignalFriend>>,
             public assignable<typename readable_traits<T>::value_type,
-                writable_field<T, AssignmentTest, null_signal, SignalFriend>>
+                writable_field<T, null_signal, SignalFriend>>
         {
         public:
-            using base = writable_field_base<T, AssignmentTest,
-                writable_field<T, AssignmentTest, null_signal, SignalFriend>>;
+            using base = writable_field_base<T,
+                writable_field<T, null_signal, SignalFriend>>;
             using assignable_base = assignable<typename readable_traits<T>::value_type,
-                writable_field<T, AssignmentTest, null_signal, SignalFriend>>;
+                writable_field<T, null_signal, SignalFriend>>;
             
             using base::base;
             using assignable_base::operator=;

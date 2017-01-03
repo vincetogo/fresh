@@ -46,7 +46,7 @@ namespace fresh
     using write_lock = std::unique_lock<T>;
 
 #else
-    using shared_mutex = std::mutex;
+    using shared_mutex = std::recursive_mutex;
     
     template <class T>
     using read_lock = std::lock_guard<T>;
