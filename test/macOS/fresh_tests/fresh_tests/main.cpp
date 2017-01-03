@@ -35,6 +35,8 @@ namespace
         property<float, writable_by<A>> f2 = 3;
         property<int, read_only>        i1 = 14;
         
+        property<int>                   counter = 0;
+        
         const float&
         get_f3() const
         {
@@ -114,9 +116,29 @@ int main(int argc, const char * argv[])
     a.f4 -= 3.15f;
     a.f4 --;
     
-    //a.another_a = std::make_shared<A>();
+    a.counter.connect(
+         [&]()
+         {
+             printf("counter is now %i\n", a.counter());
+         });
     
-    printf("f3: %f\n", a.f3());
+    std::thread t1([&](){for (int i = 0; i < 100; i++) a.counter++;});
+    std::thread t2([&](){for (int i = 0; i < 100; i++) a.counter++;});
+    std::thread t3([&](){for (int i = 0; i < 100; i++) a.counter++;});
+    std::thread t4([&](){for (int i = 0; i < 100; i++) a.counter++;});
+    std::thread t5([&](){for (int i = 0; i < 100; i++) a.counter++;});
+    std::thread t6([&](){for (int i = 0; i < 100; i++) a.counter++;});
+
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    t5.join();
+    t6.join();
+    
+    printf("%i\n", a.counter());
+    
+    //printf("f3: %f\n", a.f3());
     
     return 0;
 }

@@ -19,7 +19,8 @@ namespace fresh
 {
     namespace property_details
     {
-        template <class T, bool = std::is_integral<T>::value && !std::is_same<T, bool>::value>
+        template <class T,
+            bool = std::is_integral<T>::value && !std::is_same<T, bool>::value>
         struct readable_traits
         {
             using mutex_type = fresh::shared_mutex;
@@ -91,18 +92,13 @@ namespace fresh
                   assignment_test_t<T> AssignmentTest,
                   class Impl>
         class writable_field_base :
-            public readable_field<T>,
-            public assignable<T, writable_field_base<T, AssignmentTest, Impl>>
+            public readable_field<T>
         {
         public:
             using base = readable_field<T>;
             
             using base::base;
-            using assignable<T, writable_field_base<T, AssignmentTest, Impl>>::operator=;
-            
-        private:
-            friend assignable<T, writable_field_base<T, AssignmentTest, Impl>>;
-            
+                        
             void
             assign(typename format<T>::arg_type rhs)
             {
@@ -133,10 +129,14 @@ namespace fresh
         class writable_field :
             public writable_field_base<T, AssignmentTest,
                 writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>,
+            public assignable<typename readable_traits<T>::value_type,
+                writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>,
             public signaller<T, SignalInfo, SignalFriend>
         {
         public:
             using base = writable_field_base<T, AssignmentTest,
+                writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>;
+            using assignable_base = assignable<typename readable_traits<T>::value_type,
                 writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>;
             
             writable_field() :
@@ -159,10 +159,11 @@ namespace fresh
             {
             }
             
-            using base::operator=;
+            using assignable_base::operator=;
             
         private:
             friend base;
+            friend assignable_base;
             
             void
             on_assign()
@@ -176,14 +177,18 @@ namespace fresh
                   class SignalFriend>
         class writable_field<T, AssignmentTest, null_signal, SignalFriend> :
             public writable_field_base<T, AssignmentTest,
+                writable_field<T, AssignmentTest, null_signal, SignalFriend>>,
+            public assignable<typename readable_traits<T>::value_type,
                 writable_field<T, AssignmentTest, null_signal, SignalFriend>>
         {
         public:
             using base = writable_field_base<T, AssignmentTest,
                 writable_field<T, AssignmentTest, null_signal, SignalFriend>>;
+            using assignable_base = assignable<typename readable_traits<T>::value_type,
+                writable_field<T, AssignmentTest, null_signal, SignalFriend>>;
             
             using base::base;
-            using base::operator=;
+            using assignable_base::operator=;
             
         private:
             friend base;
