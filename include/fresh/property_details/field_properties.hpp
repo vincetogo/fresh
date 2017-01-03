@@ -124,20 +124,20 @@ namespace fresh
         
         template <class T,
                   assignment_test_t<T> AssignmentTest,
-                  class SignalInfo,
+                  class EventTraits,
                   class SignalFriend>
         class writable_field :
             public writable_field_base<T, AssignmentTest,
-                writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>,
+                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>,
             public assignable<typename readable_traits<T>::value_type,
-                writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>,
-            public signaller<T, SignalInfo, SignalFriend>
+                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>,
+            public signaller<T, EventTraits, SignalFriend>
         {
         public:
             using base = writable_field_base<T, AssignmentTest,
-                writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>;
+                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>;
             using assignable_base = assignable<typename readable_traits<T>::value_type,
-                writable_field<T, AssignmentTest, SignalInfo, SignalFriend>>;
+                writable_field<T, AssignmentTest, EventTraits, SignalFriend>>;
             
             writable_field() :
                 base()
@@ -168,7 +168,7 @@ namespace fresh
             void
             on_assign()
             {
-                signaller<T, SignalInfo, SignalFriend>::send();
+                signaller<T, EventTraits, SignalFriend>::send();
             }
         };
         

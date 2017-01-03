@@ -13,35 +13,35 @@
 namespace fresh
 {
     template <class SignalType, class ConnectionType>
-    struct signal_info;
+    struct event_traits;
     
     struct null_signal;
     
     namespace property_details
     {
-        template <class SignalInfo>
+        template <class EventTraits>
         class signaller_base
         {
         protected:
             
-            typename SignalInfo::signal_type  _onChanged;
+            typename EventTraits::signal_type  _onChanged;
             
         public:
             
-            using connection_type = typename SignalInfo::connection_type;
-            using signal_info = SignalInfo;
-            using signal_type = typename SignalInfo::signal_type;
+            using connection_type = typename EventTraits::connection_type;
+            using event_traits = EventTraits;
+            using signal_type = typename EventTraits::signal_type;
             
             template <class... Args>
             connection_type
             connect(const std::function<void()>& fn, Args... args)
             {
-                return signal_info::connect(_onChanged, fn, args...);
+                return event_traits::connect(_onChanged, fn, args...);
             }
             
             void disconnect_all()
             {
-                signal_info::disconnect_all(_onChanged);
+                event_traits::disconnect_all(_onChanged);
             }
         };
         
@@ -49,14 +49,14 @@ namespace fresh
         {
         };
         
-        template <class T, class SignalInfo, class F = any_class>
-        class signaller : public signaller_base<SignalInfo>
+        template <class T, class EventTraits, class F = any_class>
+        class signaller : public signaller_base<EventTraits>
         {
             friend F;
             
         public:
             
-            using base = signaller_base<SignalInfo>;
+            using base = signaller_base<EventTraits>;
             
         protected:
             
@@ -66,12 +66,12 @@ namespace fresh
             }
         };
         
-        template <class T, class SignalInfo>
-        class signaller<T, SignalInfo, any_class> : public signaller_base<SignalInfo>
+        template <class T, class EventTraits>
+        class signaller<T, EventTraits, any_class> : public signaller_base<EventTraits>
         {
         public:
             
-            using base = signaller_base<SignalInfo>;
+            using base = signaller_base<EventTraits>;
             
             void send()
             {

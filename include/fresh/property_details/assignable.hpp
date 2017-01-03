@@ -86,8 +86,10 @@ namespace fresh
             Impl&
             operator += (typename format<T>::arg_type rhs)
             {
-                ((Impl*)this)->_value.fech_add(rhs);
+                ((Impl*)this)->_value.fetch_add(rhs);
                 ((Impl*)this)->on_assign();
+                
+                return *((Impl*)this);
             }
             
             Impl&
@@ -109,8 +111,10 @@ namespace fresh
             Impl&
             operator -= (typename format<T>::arg_type rhs)
             {
-                ((Impl*)this)->_value.fech_add(-rhs);
+                ((Impl*)this)->_value.fetch_add(-rhs);
                 ((Impl*)this)->on_assign();
+                
+                return *((Impl*)this);
             }
             
             Impl&

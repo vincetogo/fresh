@@ -15,7 +15,7 @@
 
 namespace fresh
 {
-    template <class OwnerType, class SignalInfo>
+    template <class OwnerType, class EventTraits>
     struct dynamic;
     
     template<class PropertyType>
@@ -47,8 +47,8 @@ namespace fresh
             using type = void (D::*)(const T&);
         };
                 
-        template <class T, class D, class SignalInfo, typename getter<T, D>::type Getter>
-        class gettable : public signaller<T, SignalInfo>
+        template <class T, class D, class EventTraits, typename getter<T, D>::type Getter>
+        class gettable : public signaller<T, EventTraits>
         {
         public:
             
@@ -65,7 +65,7 @@ namespace fresh
             {
                 for (auto& cnxn : _propertyConnections)
                 {
-                    SignalInfo::disconnect(cnxn);
+                    EventTraits::disconnect(cnxn);
                 }
             }
             
@@ -110,18 +110,18 @@ namespace fresh
             std::vector<connection> _propertyConnections;
         };
         
-        template <class T, class D, class SignalInfo,
+        template <class T, class D, class EventTraits,
                   typename getter<T, D>::type Getter,
                   typename setter<T, D>::type Setter>
-        class settable : public gettable<T, D, SignalInfo, Getter>,
-            assignable<T, settable<T, D, SignalInfo, Getter, Setter>>
+        class settable : public gettable<T, D, EventTraits, Getter>,
+            assignable<T, settable<T, D, EventTraits, Getter, Setter>>
         {
         public:
             
             using assignable_base =
-            assignable<T, settable<T, D, SignalInfo, Getter, Setter>>;
+            assignable<T, settable<T, D, EventTraits, Getter, Setter>>;
             
-            using gettable<T, D, SignalInfo, Getter>::gettable;
+            using gettable<T, D, EventTraits, Getter>::gettable;
             using assignable_base::operator=;
             
         private:
@@ -129,7 +129,7 @@ namespace fresh
             
             void assign(typename format<T>::arg_type rhs)
             {
-                (gettable<T, D, SignalInfo, Getter>::_host->*Setter)(rhs);
+                (gettable<T, D, EventTraits, Getter>::_host->*Setter)(rhs);
             }
         };
         
@@ -139,35 +139,35 @@ namespace fresh
         
         template <class T,
                   class D,
-                  class SignalInfo,
+                  class EventTraits,
                   typename getter<T, D>::type Getter,
                   typename setter<T, D>::type Setter>
-        class dynamic_impl<T, dynamic<D, SignalInfo>,
+        class dynamic_impl<T, dynamic<D, EventTraits>,
                            std::integral_constant
                             <typename getter<T, D>::type, Getter>,
                            std::integral_constant
                             <typename setter<T, D>::type, Setter>> :
-            public settable<T, D, SignalInfo, Getter, Setter>
+            public settable<T, D, EventTraits, Getter, Setter>
         {
         public:
             
-            using settable<T, D, SignalInfo, Getter, Setter>::settable;
-            using settable<T, D, SignalInfo, Getter, Setter>::operator=;
+            using settable<T, D, EventTraits, Getter, Setter>::settable;
+            using settable<T, D, EventTraits, Getter, Setter>::operator=;
         };
         
         template <class T,
                   class D,
-                  class SignalInfo,
+                  class EventTraits,
                   typename getter<T, D>::type Getter>
-        class dynamic_impl<T, dynamic<D, SignalInfo>,
+        class dynamic_impl<T, dynamic<D, EventTraits>,
                            std::integral_constant
                             <typename getter<T, D>::type, Getter>,
                            std::integral_constant
                             <typename setter<T, D>::type, nullptr>> :
-            public gettable<T, D, SignalInfo, Getter>
+            public gettable<T, D, EventTraits, Getter>
         {
         public:
-            using gettable<T, D, SignalInfo, Getter>::gettable;
+            using gettable<T, D, EventTraits, Getter>::gettable;
         };
     }    
 }

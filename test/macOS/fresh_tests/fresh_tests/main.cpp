@@ -122,12 +122,12 @@ int main(int argc, const char * argv[])
              printf("counter is now %i\n", a.counter());
          });
     
-    std::thread t1([&](){for (int i = 0; i < 100; i++) a.counter++;});
-    std::thread t2([&](){for (int i = 0; i < 100; i++) a.counter++;});
-    std::thread t3([&](){for (int i = 0; i < 100; i++) a.counter++;});
-    std::thread t4([&](){for (int i = 0; i < 100; i++) a.counter++;});
-    std::thread t5([&](){for (int i = 0; i < 100; i++) a.counter++;});
-    std::thread t6([&](){for (int i = 0; i < 100; i++) a.counter++;});
+    std::thread t1([&](){for (int i = 0; i < 500; i++) a.counter++;});
+    std::thread t2([&](){for (int i = 0; i < 500; i++) a.counter+=2;});
+    std::thread t3([&](){for (int i = 0; i < 500; i++) a.counter-=2;});
+    std::thread t4([&](){for (int i = 0; i < 500; i++) a.counter--;});
+    std::thread t5([&](){for (int i = 0; i < 500; i++) a.counter++;});
+    std::thread t6([&](){for (int i = 0; i < 500; i++) a.counter++;});
 
     t1.join();
     t2.join();

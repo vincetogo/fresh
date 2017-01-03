@@ -16,13 +16,13 @@ namespace fresh
     // signal types
     
     template <class SignalType, class ConnectionType>
-    struct signal_info
+    struct event_traits
     {
         using connection_type = ConnectionType;
         using signal_type = SignalType;
     };
     
-    struct default_signal : signal_info<signal<void()>, connection>
+    struct default_signal : event_traits<signal<void()>, connection>
     {
         template<class... Args>
         static connection
@@ -88,29 +88,29 @@ namespace fresh
         template <class T>
         using assignment_test = assign_never<T>;
         
-        using signal_info = null_signal;
+        using event_traits = null_signal;
     };
     
-    template <class OwnerType, class SignalInfo = default_signal>
+    template <class OwnerType, class EventTraits = default_signal>
     struct dynamic
     {
         using owner_type = OwnerType;
-        using signal_info = SignalInfo;
+        using event_traits = EventTraits;
     };
     
     template <template <class T> class AssignmentTest = assign_always,
-              class SignalInfo = default_signal>
+              class EventTraits = default_signal>
     struct writable
     {
         template <class T>
         using assignment_test = AssignmentTest<T>;
         
-        using signal_info = SignalInfo;
+        using event_traits = EventTraits;
     };
     
     template <class W,
               template <class T> class AssignmentTest = assign_always,
-              class SignalInfo = default_signal>
+              class EventTraits = default_signal>
     struct writable_by
     {
     public:
@@ -119,7 +119,7 @@ namespace fresh
         template <class T>
         using assignment_test = AssignmentTest<T>;
         
-        using signal_info = SignalInfo;
+        using event_traits = EventTraits;
     };
     
     using light = writable<assign_always, null_signal>;
@@ -136,8 +136,8 @@ namespace fresh
     template<class PropertyType>
     struct function_params;
     
-    template<class Owner, class SignalInfo>
-    struct function_params<dynamic<Owner, SignalInfo>>
+    template<class Owner, class EventTraits>
+    struct function_params<dynamic<Owner, EventTraits>>
     {
         template <class T>
         using getter_type = typename property_details::getter<T, Owner>::type;
@@ -171,14 +171,14 @@ namespace fresh
     {
     };
     
-    template<template <class T2> class AssignmentTest, class SignalInfo>
-    struct function_params<writable<AssignmentTest, SignalInfo>> :
+    template<template <class T2> class AssignmentTest, class EventTraits>
+    struct function_params<writable<AssignmentTest, EventTraits>> :
         public field_function_params
     {
     };
     
-    template<class W, template <class T2> class AssignmentTest, class SignalInfo>
-    struct function_params<writable_by<W, AssignmentTest, SignalInfo>> :
+    template<class W, template <class T2> class AssignmentTest, class EventTraits>
+    struct function_params<writable_by<W, AssignmentTest, EventTraits>> :
         public field_function_params
     {
     };
@@ -226,16 +226,16 @@ namespace fresh
     
     template <class T,
               template <class T2> class AssignmentTest,
-              class SignalInfo,
+              class EventTraits,
               bool Getter,
               bool Setter>
-    class property<T, writable<AssignmentTest, SignalInfo>, Getter, Setter> :
-        public property_details::writable_field<T, &AssignmentTest<T>::test, SignalInfo, property_details::any_class>
+    class property<T, writable<AssignmentTest, EventTraits>, Getter, Setter> :
+        public property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, property_details::any_class>
     {
         static_assert(!Getter && !Setter, "Invalid writable property declaration");
         
     public:
-        using base = property_details::writable_field<T, &AssignmentTest<T>::test, SignalInfo, property_details::any_class>;
+        using base = property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, property_details::any_class>;
         
         using base::base;
         using base::operator=;
@@ -244,15 +244,15 @@ namespace fresh
     template <class T,
               class W,
               template <class T2> class AssignmentTest,
-              class SignalInfo,
+              class EventTraits,
               bool Getter, bool Setter>
-    class property<T, writable_by<W, AssignmentTest, SignalInfo>, Getter, Setter> :
-        public property_details::writable_field<T, &AssignmentTest<T>::test, SignalInfo, W>
+    class property<T, writable_by<W, AssignmentTest, EventTraits>, Getter, Setter> :
+        public property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, W>
     {
         static_assert(!Getter && !Setter, "Invalid writable_by property declaration");
         
     public:
-        using base = property_details::writable_field<T, &AssignmentTest<T>::test, SignalInfo, W>;
+        using base = property_details::writable_field<T, &AssignmentTest<T>::test, EventTraits, W>;
         
         using base::base;
         
