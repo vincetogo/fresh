@@ -138,15 +138,19 @@ namespace fresh
             Impl&
             operator = (typename format<T>::arg_type rhs)
             {
-                ((Impl*)this)->assign(rhs);
-                return *(Impl*)this;
+                ((Impl*)this)->_value = rhs;
+                ((Impl*)this)->on_assign();
+                
+                return *this;
             }
             
             Impl&
             operator = (std::nullptr_t)
             {
-                ((Impl*)this)->assign(nullptr);
-                return *(Impl*)this;
+                ((Impl*)this)->_value = nullptr;
+                ((Impl*)this)->on_assign();
+                
+                return *this;
             }
         };
     }
