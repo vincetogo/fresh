@@ -11,6 +11,9 @@
 #include <fresh/property.hpp>
 
 #include <memory>
+#include <thread>
+
+extern void event_test();
 
 namespace
 {
@@ -115,7 +118,7 @@ int main(int argc, const char * argv[])
     a.f4 -= 3.15f;
     a.f4 --;
     
-    a.counter.connect(
+    auto counterCnxn = a.counter.connect(
          [&]()
          {
              printf("counter is now %i\n", a.counter());
@@ -138,6 +141,8 @@ int main(int argc, const char * argv[])
     printf("%i\n", a.counter());
     
     //printf("f3: %f\n", a.f3());
+    
+    event_test();
     
     return 0;
 }

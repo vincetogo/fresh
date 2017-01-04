@@ -8,7 +8,7 @@
 #ifndef fresh_property_details_signaller_hpp
 #define fresh_property_details_signaller_hpp
 
-#include "../signal.hpp"
+#include "../event.hpp"
 
 namespace fresh
 {

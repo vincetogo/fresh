@@ -97,7 +97,7 @@ namespace fresh
                         this->send();
                     });
                 
-                _propertyConnections.emplace_back(cnxn);
+                _propertyConnections.push_back(std::move(cnxn));
                 
                 connect_to_properties(rest...);
             }
@@ -108,7 +108,7 @@ namespace fresh
             }
             
             D*  _host;
-            std::vector<connection> _propertyConnections;
+            std::vector<ev_connection> _propertyConnections;
         };
         
         template <class T, class D, class EventTraits,

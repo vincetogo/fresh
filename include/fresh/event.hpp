@@ -13,6 +13,7 @@
 #include <cassert>
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
