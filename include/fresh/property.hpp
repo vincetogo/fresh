@@ -8,7 +8,7 @@
 #ifndef fresh_property_hpp
 #define fresh_property_hpp
 
-#include "property_details/field_properties.hpp"
+#include "property_details/writable_field.hpp"
 #include "property_details/dynamic_properties.hpp"
 
 namespace fresh
