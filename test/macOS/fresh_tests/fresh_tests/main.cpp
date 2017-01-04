@@ -37,6 +37,7 @@ namespace
         property<float, light>          f1 = 3;
         property<float, writable_by<A>> f2 = 3;
         property<int, read_only>        i1 = 14;
+        property<int, light>            i2 = 14;
         
         property<int>                   counter = 0;
         
@@ -80,6 +81,7 @@ int main(int argc, const char * argv[])
     A a;
     
     a.f1 = 4.0f;
+    a.i2 = 3;
     //a.f2 = 4.0f; -> Error: f2 is only writable by A
     //a.i1 = 18; -> Error: i1 is read_only
     //a.f3 = 5.0f; -> Error: f3 doesn't have a setter

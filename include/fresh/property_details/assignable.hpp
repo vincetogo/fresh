@@ -141,7 +141,7 @@ namespace fresh
                 ((Impl*)this)->_value = rhs;
                 ((Impl*)this)->on_assign();
                 
-                return *this;
+                return *(Impl*)this;
             }
             
             Impl&
@@ -150,7 +150,7 @@ namespace fresh
                 ((Impl*)this)->_value = nullptr;
                 ((Impl*)this)->on_assign();
                 
-                return *this;
+                return *(Impl*)this;
             }
         };
     }

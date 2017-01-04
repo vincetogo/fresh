@@ -164,6 +164,7 @@ namespace fresh
             
         private:
             friend base;
+            friend assignable_base;
             
             void
             on_assign()
