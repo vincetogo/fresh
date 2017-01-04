@@ -40,6 +40,8 @@ namespace fresh
         {
         public:
             
+            using mutex_type = typename readable_traits<T>::mutex_type;
+            
             writable_field_base() :
                 _value()
             {
@@ -62,7 +64,7 @@ namespace fresh
             
             typename format<T>::result_type operator () () const
             {
-                FRESH_READ_GUARD(_mutex);
+                read_lock<mutex_type> lock(_mutex);
                 
                 return _value;
             }
@@ -81,7 +83,7 @@ namespace fresh
             assign(typename format<T>::arg_type rhs)
             {
                 {
-                    FRESH_WRITE_GUARD(_mutex);
+                    write_lock<mutex_type> lock(_mutex);
                     _value = rhs;
                 }
                 

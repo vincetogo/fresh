@@ -88,18 +88,4 @@ namespace std
     };
 }
 
-#define FRESH_NAMED_LOCK(name, x, lock) lock<decltype(x)> name(x)
-
-#define FRESH_NAMED_LOCK_GUARD(name, x)     FRESH_NAMED_LOCK(name, x, std::lock_guard)
-#define FRESH_LOCK_GUARD(x)                 FRESH_NAMED_LOCK_GUARD(fresh_lock_guard, x)
-
-#define FRESH_NAMED_UNIQUE_LOCK(name, x)    FRESH_NAMED_LOCK(name, x, std::unique_lock)
-#define FRESH_UNIQUE_LOCK(x)                FRESH_NAMED_LOCK_GUARD(fresh_unique_lock, x)
-
-#define FRESH_NAMED_READ_GUARD(name, x)     FRESH_NAMED_LOCK(name, x, fresh::read_lock)
-#define FRESH_READ_GUARD(x)                 FRESH_NAMED_READ_GUARD(fresh_read_guard, x)
-
-#define FRESH_NAMED_WRITE_GUARD(name, x)    FRESH_NAMED_LOCK(name, x, fresh::write_lock)
-#define FRESH_WRITE_GUARD(x)                FRESH_NAMED_WRITE_GUARD(fresh_unique_lock, x)
-
 #endif

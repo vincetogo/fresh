@@ -114,8 +114,8 @@ public:
     
     connection(connection&& other)
     {
-        FRESH_NAMED_LOCK_GUARD(lock1, _mutex);
-        FRESH_NAMED_LOCK_GUARD(lock2, other._mutex);
+        std::lock_guard<std::mutex> lock1(_mutex);
+        std::lock_guard<std::mutex> lock2(other._mutex);
         
         _event = other._event;
         _fn = other._fn;
@@ -142,8 +142,8 @@ public:
     
     bool operator < (const connection& rhs) const
     {
-        FRESH_NAMED_LOCK_GUARD(lock1, _mutex);
-        FRESH_NAMED_LOCK_GUARD(lock2, rhs._mutex);
+        std::lock_guard<std::mutex> lock1(_mutex);
+        std::lock_guard<std::mutex> lock2(rhs._mutex);
         
         return _fn < rhs._fn;
     }
@@ -168,7 +168,7 @@ private:
     
     void clear()
     {
-        FRESH_LOCK_GUARD(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         
         _event = nullptr;
         _fn = nullptr;
@@ -190,7 +190,7 @@ public:
     
     connection connect(const std::function<Result(Args...)>& fn)
     {
-        FRESH_LOCK_GUARD(_mutex);
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         
         source_type source(fn);
         void* key = source._fn.get();
@@ -241,7 +241,8 @@ private:
     
     void close(connection& cnxn) override
     {
-        FRESH_LOCK_GUARD(_mutex);
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
+
         
         _invalid_connections.insert(std::move(cnxn));
         
@@ -275,7 +276,7 @@ public:
     
     auto operator()(Args... args) -> std::vector<Result, Alloc<Result>>
     {
-        FRESH_LOCK_GUARD(base::_mutex);
+        std::lock_guard<std::recursive_mutex> lock(base::_mutex);
         
         std::vector<Result, Alloc<Result>> results;
         
@@ -315,7 +316,7 @@ public:
     
     void operator()(Args... args)
     {
-        FRESH_LOCK_GUARD(base::_mutex);
+        std::lock_guard<std::recursive_mutex> lock(base::_mutex);
         
         base::do_call(nullptr, args...);
     }
