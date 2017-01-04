@@ -48,46 +48,8 @@ namespace fresh
     {
     };
     
-    // assignment tests for writable field-type properties
-    
-    template <class T>
-    struct assign_always
-    {
-        using value_type = typename property_details::format<T>::value_type;
-
-        constexpr static bool test(const value_type&, const value_type&)
-        {
-            return true;
-        }
-    };
-    
-    template <class T>
-    struct assign_different
-    {
-        using value_type = typename property_details::format<T>::value_type;
-        
-        static bool test(const value_type& currValue, const value_type& newValue)
-        {
-            return currValue != newValue;
-        }
-    };
-    
-    template <class T>
-    struct assign_never
-    {
-        using value_type = typename property_details::format<T>::value_type;
-        
-        constexpr static bool test(const value_type&, const value_type&)
-        {
-            return false;
-        }
-    };
-    
     struct read_only
     {
-        template <class T>
-        using assignment_test = assign_never<T>;
-        
         using event_traits = null_signal;
     };
     
@@ -104,12 +66,12 @@ namespace fresh
         using event_traits = EventTraits;
     };
     
-    template <class W,
+    template <class WriterType,
               class EventTraits = default_signal>
     struct writable_by
     {
     public:
-        using writer = W;
+        using writer = WriterType;
         
         using event_traits = EventTraits;
     };
@@ -121,8 +83,8 @@ namespace fresh
     
     using light_writable = writable<null_signal>;
     
-    template <class W>
-    using light_writable_by = writable_by<W, null_signal>;
+    template <class WriterType>
+    using light_writable_by = writable_by<WriterType, null_signal>;
     
     template<class PropertyType>
     struct function_params;
@@ -203,16 +165,44 @@ namespace fresh
     };
     
     template <class T, bool Getter, bool Setter>
-    class property<T, read_only, Getter, Setter> :
-        public property_details::readable_field<T>
+    class property<T, read_only, Getter, Setter>
     {
         static_assert(!Getter && !Setter, "Invalid read_only property declaration");
     public:
         
-        using base = property_details::readable_field<T>;
-        using base::base;
+        property(T value) :
+            _value(value)
+        {
+        }
         
-        property& operator= (const property& rhs) = delete;
+        property(const property& other) :
+            _value(other())
+        {
+        }
+        
+        property(std::nullptr_t) :
+            _value(nullptr)
+        {
+        }
+        
+        const T& operator () () const
+        {
+            return _value;
+        }
+        
+        bool operator == (T other) const
+        {
+            return _value == other;
+        }
+        
+        bool operator != (T other) const
+        {
+            return !operator==(other);
+        }
+        
+    private:
+        
+        const T _value;
     };
     
     template <class T,
@@ -220,28 +210,33 @@ namespace fresh
               bool Getter,
               bool Setter>
     class property<T, writable<EventTraits>, Getter, Setter> :
-        public property_details::writable_field<T, EventTraits, property_details::any_class>
+        public property_details::writable_field
+            <T, EventTraits, property_details::any_class>
     {
-        static_assert(!Getter && !Setter, "Invalid writable property declaration");
+        static_assert(!Getter && !Setter,
+                      "Invalid writable property declaration");
         
     public:
-        using base = property_details::writable_field<T, EventTraits, property_details::any_class>;
+        using base = property_details::writable_field
+            <T, EventTraits, property_details::any_class>;
         
         using base::base;
         using base::operator=;
     };
     
     template <class T,
-              class W,
+              class WriterType,
               class EventTraits,
               bool Getter, bool Setter>
-    class property<T, writable_by<W, EventTraits>, Getter, Setter> :
-        public property_details::writable_field<T, EventTraits, W>
+    class property<T, writable_by<WriterType, EventTraits>, Getter, Setter> :
+        public property_details::writable_field<T, EventTraits, WriterType>
     {
-        static_assert(!Getter && !Setter, "Invalid writable_by property declaration");
+        static_assert(!Getter && !Setter,
+                      "Invalid writable_by property declaration");
         
     public:
-        using base = property_details::writable_field<T, EventTraits, W>;
+        using base =
+            property_details::writable_field<T, EventTraits, WriterType>;
         
         using base::base;
         
@@ -260,7 +255,7 @@ namespace fresh
         
     private:
         
-        friend W;
+        friend WriterType;
     };
 }
 

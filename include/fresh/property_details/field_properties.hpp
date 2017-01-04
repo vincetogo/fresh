@@ -33,28 +33,29 @@ namespace fresh
             using mutex_type = fresh::atomic_mutex;
             using value_type = std::atomic<T>;
         };
-        
-        template <class T>
-        class readable_field
+                
+        template <class T,
+                  class Impl>
+        class writable_field_base
         {
         public:
             
-            readable_field() :
+            writable_field_base() :
                 _value()
             {
             }
             
-            readable_field(typename format<T>::arg_type value) :
+            writable_field_base(typename format<T>::arg_type value) :
                 _value(value)
             {
             }
             
-            readable_field(const readable_field& other) :
+            writable_field_base(const writable_field_base& other) :
                 _value(other())
             {
             }
             
-            readable_field(std::nullptr_t) :
+            writable_field_base(std::nullptr_t) :
                 _value(nullptr)
             {
             }
@@ -66,44 +67,31 @@ namespace fresh
                 return _value;
             }
             
-            bool operator == (typename format<T>::arg_type other) const
+            bool operator == (T other) const
             {
-                FRESH_READ_GUARD(_mutex);
-
-                return _value == other;
+                return operator()() == other;
             }
             
-            bool operator != (typename format<T>::arg_type other) const
+            bool operator != (T other) const
             {
                 return !operator==(other);
+            }
+            
+            void
+            assign(typename format<T>::arg_type rhs)
+            {
+                {
+                    FRESH_WRITE_GUARD(_mutex);
+                    _value = rhs;
+                }
+                
+                ((Impl*)this)->on_assign();
             }
             
         protected:
             
             mutable typename readable_traits<T>::mutex_type _mutex;
             typename readable_traits<T>::value_type         _value;
-        };
-                
-        template <class T,
-                  class Impl>
-        class writable_field_base :
-            public readable_field<T>
-        {
-        public:
-            using base = readable_field<T>;
-            
-            using base::base;
-                        
-            void
-            assign(typename format<T>::arg_type rhs)
-            {
-                {
-                    FRESH_WRITE_GUARD(base::_mutex);
-                    readable_field<T>::_value = rhs;
-                }
-                
-                ((Impl*)this)->on_assign();
-            }
         };
         
         template <class T,
@@ -119,8 +107,9 @@ namespace fresh
         public:
             using base = writable_field_base<T,
                 writable_field<T, EventTraits, SignalFriend>>;
-            using assignable_base = assignable<typename readable_traits<T>::value_type,
-                writable_field<T, EventTraits, SignalFriend>>;
+            using assignable_base =
+                assignable<typename readable_traits<T>::value_type,
+                    writable_field<T, EventTraits, SignalFriend>>;
             
             writable_field() :
                 base()
@@ -166,8 +155,9 @@ namespace fresh
         public:
             using base = writable_field_base<T,
                 writable_field<T, null_signal, SignalFriend>>;
-            using assignable_base = assignable<typename readable_traits<T>::value_type,
-                writable_field<T, null_signal, SignalFriend>>;
+            using assignable_base =
+                assignable<typename readable_traits<T>::value_type,
+                    writable_field<T, null_signal, SignalFriend>>;
             
             using base::base;
             using assignable_base::operator=;

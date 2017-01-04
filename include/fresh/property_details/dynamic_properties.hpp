@@ -47,7 +47,8 @@ namespace fresh
             using type = void (D::*)(const T&);
         };
                 
-        template <class T, class D, class EventTraits, typename getter<T, D>::type Getter>
+        template <class T, class D, class EventTraits,
+            typename getter<T, D>::type Getter>
         class gettable : public signaller<T, EventTraits>
         {
         public:
@@ -111,8 +112,8 @@ namespace fresh
         };
         
         template <class T, class D, class EventTraits,
-                  typename getter<T, D>::type Getter,
-                  typename setter<T, D>::type Setter>
+            typename getter<T, D>::type Getter,
+            typename setter<T, D>::type Setter>
         class settable : public gettable<T, D, EventTraits, Getter>,
             assignable<T, settable<T, D, EventTraits, Getter, Setter>>
         {
@@ -138,16 +139,14 @@ namespace fresh
         class dynamic_impl;
         
         template <class T,
-                  class D,
-                  class EventTraits,
-                  typename getter<T, D>::type Getter,
-                  typename setter<T, D>::type Setter>
+            class D,
+            class EventTraits,
+            typename getter<T, D>::type Getter,
+            typename setter<T, D>::type Setter>
         class dynamic_impl<T, dynamic<D, EventTraits>,
-                           std::integral_constant
-                            <typename getter<T, D>::type, Getter>,
-                           std::integral_constant
-                            <typename setter<T, D>::type, Setter>> :
-            public settable<T, D, EventTraits, Getter, Setter>
+            std::integral_constant<typename getter<T, D>::type, Getter>,
+            std::integral_constant<typename setter<T, D>::type, Setter>> :
+        public settable<T, D, EventTraits, Getter, Setter>
         {
         public:
             
