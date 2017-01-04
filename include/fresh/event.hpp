@@ -177,7 +177,7 @@ private:
     event_details::event_interface* _event;
     void*                           _fn;
     event_details::source_base*     _source;
-    mutable std::recursive_mutex    _mutex;
+    mutable std::mutex              _mutex;
 };
 
 template <class Impl, template <class S> class Alloc, class Result, class... Args>
