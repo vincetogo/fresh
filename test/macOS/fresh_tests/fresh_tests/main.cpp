@@ -91,27 +91,25 @@ int main(int argc, const char * argv[])
         [&]()
         {
             printf("f4 is now %f\n", a.f3());
-        });
+        });*/
     
-    a.f4.connect(
+    auto cnxnF4 = a.f4.connect(
         [&]()
         {
             printf("f4 is now %f\n", a.f4());
-        });*/
+        });
     
-    auto cnxn = a.f5.connect(
+    auto cnxnF5 = a.f5.connect(
         [&]()
         {
             printf("f5 is now %f\n", a.f5());
         });
     
-    {
-        a.f3 = 6.0f;
-        
-        a.f4 = 6.0f;
-        a.f4 = 3.0f;
-        a.f4 = 4.0f;
-    }
+    a.f3 = 6.0f;
+    
+    a.f4 = 6.0f;
+    a.f4 = 3.0f;
+    a.f4 = 4.0f;
     
     a.f4 += 1.6f;
     

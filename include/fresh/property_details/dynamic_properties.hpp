@@ -8,7 +8,7 @@
 #ifndef fresh_property_details_dynamic_properties_hpp
 #define fresh_property_details_dynamic_properties_hpp
 
-#include "assignable.hpp"
+#include "format.hpp"
 #include "signaller.hpp"
 
 #include <vector>
@@ -111,19 +111,67 @@ namespace fresh
         template <class T, class D, class EventTraits,
             typename getter<T, D>::type Getter,
             typename setter<T, D>::type Setter>
-        class settable : public gettable<T, D, EventTraits, Getter>,
-            assignable<T, settable<T, D, EventTraits, Getter, Setter>>
+        class settable : public gettable<T, D, EventTraits, Getter>
         {
         public:
             
-            using assignable_base =
-            assignable<T, settable<T, D, EventTraits, Getter, Setter>>;
-            
             using gettable<T, D, EventTraits, Getter>::gettable;
-            using assignable_base::operator=;
+            
+            settable&
+            operator += (typename format<T>::arg_type rhs)
+            {
+                return operator=((*this)() + rhs);
+            }
+            
+            settable&
+            operator ++ ()
+            {
+                return operator+=(1);
+            }
+            
+            T
+            operator ++ (int)
+            {
+                T result = (*this)();
+                ++(*this);
+                return result;
+            }
+            
+            settable&
+            operator -= (typename format<T>::arg_type rhs)
+            {
+                return operator=((*this)() - rhs);
+            }
+            
+            settable&
+            operator -- ()
+            {
+                return operator-=(1);
+            }
+            
+            T
+            operator -- (int)
+            {
+                T result = (*this)();
+                --(*this);
+                return result;
+            }
+            
+            settable&
+            operator = (typename format<T>::arg_type rhs)
+            {
+                assign(rhs);
+                return *this;
+            }
+            
+            settable&
+            operator = (std::nullptr_t)
+            {
+                assign(nullptr);
+                return *this;
+            }
             
         private:
-            friend assignable_base;
             
             void assign(typename format<T>::arg_type rhs)
             {
