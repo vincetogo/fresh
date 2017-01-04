@@ -45,7 +45,7 @@ class fresh::event_details::event_interface
 {
     friend ev_connection;
     
-    virtual void close(ev_connection* cnxn) = 0;
+    virtual void close(ev_connection& cnxn) = 0;
 };
 
 template <class Impl>
@@ -136,8 +136,16 @@ public:
     {
         if (!!_event)
         {
-            _event->close(this);
+            _event->close(*this);
         }
+    }
+    
+    bool operator < (const ev_connection& rhs) const
+    {
+        FRESH_NAMED_LOCK_GUARD(lock1, _mutex);
+        FRESH_NAMED_LOCK_GUARD(lock2, rhs._mutex);
+        
+        return _fn < rhs._fn;
     }
     
 private:
@@ -169,7 +177,7 @@ private:
     event_details::event_interface* _event;
     void*                           _fn;
     event_details::source_base*     _source;
-    std::recursive_mutex            _mutex;
+    mutable std::recursive_mutex    _mutex;
 };
 
 template <class Impl, template <class S> class Alloc, class Result, class... Args>
@@ -200,8 +208,6 @@ protected:
     void
     do_call(Callable forEach, Args... args)
     {
-        //FRESH_LOCK_GUARD(_mutex);
-        
         auto old_can_clean = _can_clean;
         
         _can_clean = false;
@@ -210,7 +216,6 @@ protected:
         {
             auto& source = key_source.second;
             
-            //results.push_back((*source._fn)(args...));
             ((Impl*)this)->make_call(forEach, *source._fn, args...);
         }
         
@@ -218,48 +223,40 @@ protected:
         clean();
     }
     
+    std::recursive_mutex    _mutex;
+    
 private:
     
     void clean()
     {
         if (!_can_clean) return;
         
-        for (auto cnxn : _invalid_connections)
+        for (auto& cnxn : _invalid_connections)
         {
-            auto pos = _sources.find(cnxn->_fn);
-            
-            if (pos != _sources.end())
-            {
-                _sources.erase(pos);
-                
-                cnxn->_fn = nullptr;
-                cnxn->_event = nullptr;
-            }
+            _sources.erase(cnxn._fn);
         }
         
         _invalid_connections.clear();
     }
     
-    void close(ev_connection* cnxn) override
+    void close(ev_connection& cnxn) override
     {
         FRESH_LOCK_GUARD(_mutex);
         
-        _invalid_connections.insert(cnxn);
+        _invalid_connections.insert(std::move(cnxn));
         
         clean();
     }
     
-protected:
     using connection_set_type =
         std::set
-            <ev_connection*, std::less<ev_connection*>, Alloc<ev_connection*>>;
+            <ev_connection, std::less<ev_connection>, Alloc<ev_connection>>;
 
     using source_map_type =
         std::map<void*, source_type, std::less<void*>, Alloc<source_type>>;
     
     bool                    _can_clean = true;
     connection_set_type     _invalid_connections;
-    std::recursive_mutex    _mutex;
     source_map_type         _sources;
 };
 

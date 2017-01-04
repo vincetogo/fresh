@@ -86,9 +86,9 @@
 		61DE7AEC1E1C79B200526942 /* fresh */ = {
 			isa = PBXGroup;
 			children = (
+				61DE7AF11E1C79B200526942 /* property_details */,
 				61DE7AEF1E1C79B200526942 /* event.hpp */,
 				61DE7AF01E1C79B200526942 /* property.hpp */,
-				61DE7AF11E1C79B200526942 /* property_details */,
 				61DE7AF81E1C79B200526942 /* threads.hpp */,
 			);
 			path = fresh;

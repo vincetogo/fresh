@@ -15,34 +15,16 @@ namespace fresh
 {
     // signal types
     
-    template <class SignalType, class ConnectionType>
-    struct event_traits
-    {
-        using connection_type = ConnectionType;
-        using signal_type = SignalType;
-    };
-    
-    struct default_signal : event_traits<event<void()>, ev_connection>
+    struct default_signal
     {
         using connection_type = ev_connection;
+        using signal_type = event<void()>;
         
         template<class... Args>
         static connection_type
-        connect(signal_type& sig, const std::function<void()>& fn, Args... args)
+        connect(signal_type& sig, Args... args)
         {
-            return sig.connect(fn);
-        }
-        
-        static void
-        disconnect(connection_type& cnxn)
-        {
-            //cnxn.disconnect();
-        }
-        
-        static void
-        disconnect_all(signal_type& sig)
-        {
-            //sig.disconnect_all();
+            return sig.connect(args...);
         }
     };
     

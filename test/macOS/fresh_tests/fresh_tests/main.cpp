@@ -85,7 +85,7 @@ int main(int argc, const char * argv[])
     //a.f3 = 5.0f; -> Error: f3 doesn't have a setter
     a.f4 = 5.0f;
     
-    a.f3.connect(
+    /*a.f3.connect(
         [&]()
         {
             printf("f4 is now %f\n", a.f3());
@@ -95,7 +95,7 @@ int main(int argc, const char * argv[])
         [&]()
         {
             printf("f4 is now %f\n", a.f4());
-        });
+        });*/
     
     auto cnxn = a.f5.connect(
         [&]()

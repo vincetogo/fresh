@@ -38,11 +38,6 @@ namespace fresh
             {
                 return event_traits::connect(_onChanged, fn, args...);
             }
-            
-            void disconnect_all()
-            {
-                event_traits::disconnect_all(_onChanged);
-            }
         };
         
         class any_class

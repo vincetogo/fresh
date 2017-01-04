@@ -14,13 +14,12 @@ void event_test()
     std::vector<fresh::ev_connection> cnxns;
     
     auto cnxn = e.connect(
-        []() -> void
+        [&]() -> void
         {
-            //return 3;
+            cnxns.clear();
         });
     
     cnxns.push_back(std::move(cnxn));
-    //cnxns.clear();
     
     e();
 }

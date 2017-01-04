@@ -64,10 +64,6 @@ namespace fresh
             
             ~gettable()
             {
-                for (auto& cnxn : _propertyConnections)
-                {
-                    EventTraits::disconnect(cnxn);
-                }
             }
             
             auto operator()() const -> typename format<T>::result_type
@@ -108,7 +104,8 @@ namespace fresh
             }
             
             D*  _host;
-            std::vector<ev_connection> _propertyConnections;
+            std::vector<typename EventTraits::connection_type>
+                _propertyConnections;
         };
         
         template <class T, class D, class EventTraits,
