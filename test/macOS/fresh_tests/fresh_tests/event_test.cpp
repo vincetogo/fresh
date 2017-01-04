@@ -11,7 +11,7 @@ void event_test()
 {
     fresh::event<void()> e;
     
-    std::vector<fresh::ev_connection> cnxns;
+    std::vector<fresh::connection> cnxns;
     
     auto cnxn = e.connect(
         [&]() -> void

@@ -17,7 +17,7 @@ namespace fresh
     
     struct default_signal
     {
-        using connection_type = ev_connection;
+        using connection_type = connection;
         using signal_type = event<void()>;
         
         template<class... Args>

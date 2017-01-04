@@ -22,7 +22,7 @@ namespace fresh
     namespace event_details
     {
         template<class Impl>
-        class ev_connection_base;
+        class connection_base;
      
         template <class Impl, class FnType, template <class T> class Alloc>
         class event_base;
@@ -35,7 +35,7 @@ namespace fresh
         class source;
     }
     
-    class ev_connection;
+    class connection;
     
     template <class FnType, template <class T> class Alloc = std::allocator>
     class event;
@@ -43,13 +43,13 @@ namespace fresh
 
 class fresh::event_details::event_interface
 {
-    friend ev_connection;
+    friend connection;
     
-    virtual void close(ev_connection& cnxn) = 0;
+    virtual void close(connection& cnxn) = 0;
 };
 
 template <class Impl>
-class fresh::event_details::ev_connection_base
+class fresh::event_details::connection_base
 {
     template <class Fn>
     friend class fresh::event_details::source;
@@ -66,9 +66,9 @@ private:
 class fresh::event_details::source_base
 {
 protected:
-    friend ev_connection;
+    friend connection;
     
-    ev_connection_base<ev_connection>* _connection = nullptr;
+    connection_base<connection>* _connection = nullptr;
 };
 
 template <class Fn>
@@ -91,7 +91,7 @@ public:
 private:
     template <class Impl, class Fn2, template <class S> class Alloc>
     friend class fresh::event_details::event_base;
-    friend class fresh::ev_connection;
+    friend class fresh::connection;
     
     source(std::function<Fn> fn) :
         _fn(std::make_unique<std::function<Fn>>(fn))
@@ -107,12 +107,12 @@ private:
     std::unique_ptr<std::function<Fn>>  _fn;
 };
 
-class fresh::ev_connection :
-    public event_details::ev_connection_base<ev_connection>
+class fresh::connection :
+    public event_details::connection_base<connection>
 {
 public:
     
-    ev_connection(ev_connection&& other)
+    connection(connection&& other)
     {
         FRESH_NAMED_LOCK_GUARD(lock1, _mutex);
         FRESH_NAMED_LOCK_GUARD(lock2, other._mutex);
@@ -132,7 +132,7 @@ public:
         other._source = nullptr;
     }
     
-    ~ev_connection()
+    ~connection()
     {
         if (!!_event)
         {
@@ -140,7 +140,7 @@ public:
         }
     }
     
-    bool operator < (const ev_connection& rhs) const
+    bool operator < (const connection& rhs) const
     {
         FRESH_NAMED_LOCK_GUARD(lock1, _mutex);
         FRESH_NAMED_LOCK_GUARD(lock2, rhs._mutex);
@@ -152,10 +152,10 @@ private:
     template <class Impl, class FnType, template <class T> class Alloc>
     friend class fresh::event_details::event_base;
     
-    friend class ev_connection_base<ev_connection>;
+    friend class connection_base<connection>;
 
     template<class Fn>
-    ev_connection(void* fn, event_details::event_interface* e,
+    connection(void* fn, event_details::event_interface* e,
                   event_details::source<Fn>* src) :
         _event(e),
         _fn(fn),
@@ -164,7 +164,7 @@ private:
         src->_connection = this;
     }
     
-    ev_connection& operator= (const ev_connection& other) = delete;
+    connection& operator= (const connection& other) = delete;
     
     void clear()
     {
@@ -188,7 +188,7 @@ public:
     
     using source_type = source<Result(Args...)>;
     
-    ev_connection connect(const std::function<Result(Args...)>& fn)
+    connection connect(const std::function<Result(Args...)>& fn)
     {
         FRESH_LOCK_GUARD(_mutex);
         
@@ -199,7 +199,7 @@ public:
         
         value = std::move(source);
         
-        return ev_connection(key, this, &value);
+        return connection(key, this, &value);
     }
     
 protected:
@@ -239,7 +239,7 @@ private:
         _invalid_connections.clear();
     }
     
-    void close(ev_connection& cnxn) override
+    void close(connection& cnxn) override
     {
         FRESH_LOCK_GUARD(_mutex);
         
@@ -250,7 +250,7 @@ private:
     
     using connection_set_type =
         std::set
-            <ev_connection, std::less<ev_connection>, Alloc<ev_connection>>;
+            <connection, std::less<connection>, Alloc<connection>>;
 
     using source_map_type =
         std::map<void*, source_type, std::less<void*>, Alloc<source_type>>;
