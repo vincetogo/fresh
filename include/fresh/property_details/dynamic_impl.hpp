@@ -15,7 +15,7 @@
 
 namespace fresh
 {
-    template <class OwnerType, class EventTraits>
+    template <class OwnerType, class PropertyTraits>
     struct dynamic;
     
     namespace property_details
@@ -45,7 +45,7 @@ namespace fresh
         };
         
         
-        template <class EventTraits>
+        template <class PropertyTraits>
         class dependent_property
         {
         protected:
@@ -78,7 +78,7 @@ namespace fresh
             {
             }
             
-            std::vector<typename EventTraits::connection_type>
+            std::vector<typename PropertyTraits::connection_type>
                 _propertyConnections;
         };
         
@@ -89,10 +89,10 @@ namespace fresh
         
         
         
-        template <class T, class D, class EventTraits,
+        template <class T, class D, class PropertyTraits,
             typename getter<T, D>::type Getter>
-        class gettable : public signaller<T, EventTraits>,
-            public dependent_property<EventTraits>
+        class gettable : public signaller<T, PropertyTraits>,
+            public dependent_property<PropertyTraits>
         {
         public:
             
@@ -129,14 +129,14 @@ namespace fresh
             
         };
         
-        template <class T, class D, class EventTraits,
+        template <class T, class D, class PropertyTraits,
             typename getter<T, D>::type Getter,
             typename setter<T, D>::type Setter>
-        class settable : public gettable<T, D, EventTraits, Getter>
+        class settable : public gettable<T, D, PropertyTraits, Getter>
         {
         public:
             
-            using gettable<T, D, EventTraits, Getter>::gettable;
+            using gettable<T, D, PropertyTraits, Getter>::gettable;
             
             settable&
             operator += (typename format<T>::arg_type rhs)
@@ -196,7 +196,7 @@ namespace fresh
             
             void assign(typename format<T>::arg_type rhs)
             {
-                (gettable<T, D, EventTraits, Getter>::_host->*Setter)(rhs);
+                (gettable<T, D, PropertyTraits, Getter>::_host->*Setter)(rhs);
             }
         };
         
@@ -206,33 +206,33 @@ namespace fresh
         
         template <class T,
             class D,
-            class EventTraits,
+            class PropertyTraits,
             typename getter<T, D>::type Getter,
             typename setter<T, D>::type Setter>
-        class dynamic_impl<T, dynamic<D, EventTraits>,
+        class dynamic_impl<T, dynamic<D, PropertyTraits>,
             std::integral_constant<typename getter<T, D>::type, Getter>,
             std::integral_constant<typename setter<T, D>::type, Setter>> :
-        public settable<T, D, EventTraits, Getter, Setter>
+        public settable<T, D, PropertyTraits, Getter, Setter>
         {
         public:
             
-            using settable<T, D, EventTraits, Getter, Setter>::settable;
-            using settable<T, D, EventTraits, Getter, Setter>::operator=;
+            using settable<T, D, PropertyTraits, Getter, Setter>::settable;
+            using settable<T, D, PropertyTraits, Getter, Setter>::operator=;
         };
         
         template <class T,
                   class D,
-                  class EventTraits,
+                  class PropertyTraits,
                   typename getter<T, D>::type Getter>
-        class dynamic_impl<T, dynamic<D, EventTraits>,
+        class dynamic_impl<T, dynamic<D, PropertyTraits>,
                            std::integral_constant
                             <typename getter<T, D>::type, Getter>,
                            std::integral_constant
                             <typename setter<T, D>::type, nullptr>> :
-            public gettable<T, D, EventTraits, Getter>
+            public gettable<T, D, PropertyTraits, Getter>
         {
         public:
-            using gettable<T, D, EventTraits, Getter>::gettable;
+            using gettable<T, D, PropertyTraits, Getter>::gettable;
         };
     }    
 }

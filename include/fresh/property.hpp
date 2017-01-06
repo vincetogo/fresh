@@ -37,27 +37,27 @@ namespace fresh
         using event_traits = null_signal;
     };
     
-    template <class OwnerType, class EventTraits = null_signal>
+    template <class OwnerType, class PropertyTraits = null_signal>
     struct dynamic
     {
         using owner_type = OwnerType;
-        using event_traits = EventTraits;
+        using event_traits = PropertyTraits;
     };
     
-    template <class EventTraits = null_signal>
+    template <class PropertyTraits = null_signal>
     struct writable
     {
-        using event_traits = EventTraits;
+        using event_traits = PropertyTraits;
     };
     
     template <class WriterType,
-              class EventTraits = null_signal>
+              class PropertyTraits = null_signal>
     struct writable_by
     {
     public:
         using writer = WriterType;
         
-        using event_traits = EventTraits;
+        using event_traits = PropertyTraits;
     };
     
     using light = writable<null_signal>;
@@ -73,8 +73,8 @@ namespace fresh
     template<class PropertyType>
     struct function_params;
     
-    template<class Owner, class EventTraits>
-    struct function_params<dynamic<Owner, EventTraits>>
+    template<class Owner, class PropertyTraits>
+    struct function_params<dynamic<Owner, PropertyTraits>>
     {
         template <class T>
         using getter_type = typename property_details::getter<T, Owner>::type;
@@ -108,14 +108,14 @@ namespace fresh
     {
     };
     
-    template<class EventTraits>
-    struct function_params<writable<EventTraits>> :
+    template<class PropertyTraits>
+    struct function_params<writable<PropertyTraits>> :
         public field_function_params
     {
     };
     
-    template<class W, class EventTraits>
-    struct function_params<writable_by<W, EventTraits>> :
+    template<class W, class PropertyTraits>
+    struct function_params<writable_by<W, PropertyTraits>> :
         public field_function_params
     {
     };
@@ -190,19 +190,19 @@ namespace fresh
     };
     
     template <class T,
-              class EventTraits,
+              class PropertyTraits,
               bool Getter,
               bool Setter>
-    class property<T, writable<EventTraits>, Getter, Setter> :
+    class property<T, writable<PropertyTraits>, Getter, Setter> :
         public property_details::writable_field
-            <T, EventTraits, property_details::any_class>
+            <T, PropertyTraits, property_details::any_class>
     {
         static_assert(!Getter && !Setter,
                       "Invalid writable property declaration");
         
     public:
         using base = property_details::writable_field
-            <T, EventTraits, property_details::any_class>;
+            <T, PropertyTraits, property_details::any_class>;
         
         using base::base;
         using base::operator=;
@@ -210,17 +210,17 @@ namespace fresh
     
     template <class T,
               class WriterType,
-              class EventTraits,
+              class PropertyTraits,
               bool Getter, bool Setter>
-    class property<T, writable_by<WriterType, EventTraits>, Getter, Setter> :
-        public property_details::writable_field<T, EventTraits, WriterType>
+    class property<T, writable_by<WriterType, PropertyTraits>, Getter, Setter> :
+        public property_details::writable_field<T, PropertyTraits, WriterType>
     {
         static_assert(!Getter && !Setter,
                       "Invalid writable_by property declaration");
         
     public:
         using base =
-            property_details::writable_field<T, EventTraits, WriterType>;
+            property_details::writable_field<T, PropertyTraits, WriterType>;
         
         using base::base;
         

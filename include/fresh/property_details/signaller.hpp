@@ -12,25 +12,22 @@
 
 namespace fresh
 {
-    template <class SignalType, class ConnectionType>
-    struct event_traits;
-    
     struct null_signal;
     
     namespace property_details
     {
-        template <class EventTraits>
+        template <class PropertyTraits>
         class signaller_base
         {
         protected:
             
-            typename EventTraits::signal_type  _onChanged;
+            typename PropertyTraits::signal_type  _onChanged;
             
         public:
             
-            using connection_type = typename EventTraits::connection_type;
-            using event_traits = EventTraits;
-            using signal_type = typename EventTraits::signal_type;
+            using connection_type = typename PropertyTraits::connection_type;
+            using event_traits = PropertyTraits;
+            using signal_type = typename PropertyTraits::signal_type;
             
             template <class... Args>
             connection_type
@@ -44,14 +41,14 @@ namespace fresh
         {
         };
         
-        template <class T, class EventTraits, class F = any_class>
-        class signaller : public signaller_base<EventTraits>
+        template <class T, class PropertyTraits, class F = any_class>
+        class signaller : public signaller_base<PropertyTraits>
         {
             friend F;
             
         public:
             
-            using base = signaller_base<EventTraits>;
+            using base = signaller_base<PropertyTraits>;
             
         protected:
             
@@ -61,12 +58,12 @@ namespace fresh
             }
         };
         
-        template <class T, class EventTraits>
-        class signaller<T, EventTraits, any_class> : public signaller_base<EventTraits>
+        template <class T, class PropertyTraits>
+        class signaller<T, PropertyTraits, any_class> : public signaller_base<PropertyTraits>
         {
         public:
             
-            using base = signaller_base<EventTraits>;
+            using base = signaller_base<PropertyTraits>;
             
             void send()
             {
