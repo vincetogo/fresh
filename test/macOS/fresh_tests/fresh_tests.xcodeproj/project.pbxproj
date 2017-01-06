@@ -29,7 +29,7 @@
 		61DE7AEF1E1C79B200526942 /* event.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = event.hpp; sourceTree = "<group>"; };
 		61DE7AF01E1C79B200526942 /* property.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = property.hpp; sourceTree = "<group>"; };
 		61DE7AF21E1C79B200526942 /* assignable.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = assignable.hpp; sourceTree = "<group>"; };
-		61DE7AF31E1C79B200526942 /* dynamic_properties.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = dynamic_properties.hpp; sourceTree = "<group>"; };
+		61DE7AF31E1C79B200526942 /* dynamic_impl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = dynamic_impl.hpp; sourceTree = "<group>"; };
 		61DE7AF41E1C79B200526942 /* writable_field.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = writable_field.hpp; sourceTree = "<group>"; };
 		61DE7AF51E1C79B200526942 /* format.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = format.hpp; sourceTree = "<group>"; };
 		61DE7AF61E1C79B200526942 /* signaller.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = signaller.hpp; sourceTree = "<group>"; };
@@ -98,7 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				61DE7AF21E1C79B200526942 /* assignable.hpp */,
-				61DE7AF31E1C79B200526942 /* dynamic_properties.hpp */,
+				61DE7AF31E1C79B200526942 /* dynamic_impl.hpp */,
 				61DE7AF41E1C79B200526942 /* writable_field.hpp */,
 				61DE7AF51E1C79B200526942 /* format.hpp */,
 				61DE7AF61E1C79B200526942 /* signaller.hpp */,

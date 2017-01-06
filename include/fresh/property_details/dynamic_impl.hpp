@@ -18,9 +18,6 @@ namespace fresh
     template <class OwnerType, class EventTraits>
     struct dynamic;
     
-    template<class PropertyType>
-    struct function_params;
-    
     namespace property_details
     {
         template <typename T, typename D>
@@ -46,10 +43,56 @@ namespace fresh
         {
             using type = void (D::*)(const T&);
         };
+        
+        
+        template <class EventTraits>
+        class dependent_property
+        {
+        protected:
+            
+            template<class... Properties>
+            dependent_property(Properties&... properties)
+            {
+                connect_to_properties(properties...);
+            }
+            
+        private:
+            
+            template <class Property, class... Properties>
+            void
+            connect_to_properties(Property& first, Properties&... rest)
+            {
+                auto cnxn = first.connect(
+                    [=]()
+                    {
+                        this->send();
+                    });
                 
+                _propertyConnections.push_back(std::move(cnxn));
+                
+                connect_to_properties(rest...);
+            }
+            
+            void
+            connect_to_properties()
+            {
+            }
+            
+            std::vector<typename EventTraits::connection_type>
+                _propertyConnections;
+        };
+        
+        template <>
+        class dependent_property<null_signal>
+        {
+        };
+        
+        
+        
         template <class T, class D, class EventTraits,
             typename getter<T, D>::type Getter>
-        class gettable : public signaller<T, EventTraits>
+        class gettable : public signaller<T, EventTraits>,
+            public dependent_property<EventTraits>
         {
         public:
             
@@ -57,7 +100,6 @@ namespace fresh
             gettable(D* host, Properties&... properties) :
                 _host(host)
             {
-                connect_to_properties(properties...);
             }
             
             gettable(const gettable&) = delete;
@@ -80,32 +122,11 @@ namespace fresh
             {
                 return !(*this) == other;
             }
-        
+            
         protected:
             
-            template <class Property, class... Properties>
-            void
-            connect_to_properties(Property& first, Properties&... rest)
-            {
-                auto cnxn = first.connect(
-                    [=]()
-                    {
-                        this->send();
-                    });
-                
-                _propertyConnections.push_back(std::move(cnxn));
-                
-                connect_to_properties(rest...);
-            }
-            
-            void
-            connect_to_properties()
-            {
-            }
-            
             D*  _host;
-            std::vector<typename EventTraits::connection_type>
-                _propertyConnections;
+            
         };
         
         template <class T, class D, class EventTraits,

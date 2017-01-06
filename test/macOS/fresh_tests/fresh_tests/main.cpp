@@ -32,14 +32,14 @@ namespace
         {
         }
         
-        property<std::shared_ptr<A>>                            another_a;
+        property<std::shared_ptr<A>>            another_a;
         
-        property<float, light>          f1 = 3;
-        property<float, writable_by<A>> f2 = 3;
-        property<int, read_only>        i1 = 14;
-        property<int, light>            i2 = 14;
+        property<float, light>                  f1 = 3;
+        property<float, writable_by<A>>         f2 = 3;
+        property<int, read_only>                i1 = 14;
+        property<int, light>                    i2 = 14;
         
-        property<int>                   counter = 0;
+        property<int, writable<default_signal>> counter = 0;
         
         const float&
         get_f3() const
@@ -54,8 +54,8 @@ namespace
             f3.send();
         }
         
-        property<float&, dynamic<A>, &A::get_f3, &A::set_f3>    f3;
-        property<float>                                         f4 = 3.0f;
+        property<float&, dynamic<A, default_signal>, &A::get_f3, &A::set_f3> f3;
+        property<float, writable<default_signal>>   f4 = 3.0f;
         
         float
         get_f5() const
@@ -63,7 +63,7 @@ namespace
             return f3() + f4();
         }
         
-        property<float, dynamic<A>, &A::get_f5>                 f5;
+        property<float, dynamic<A, default_signal>, &A::get_f5>              f5;
         
         void func()
         {

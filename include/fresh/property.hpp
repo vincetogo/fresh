@@ -9,7 +9,7 @@
 #define fresh_property_hpp
 
 #include "property_details/writable_field.hpp"
-#include "property_details/dynamic_properties.hpp"
+#include "property_details/dynamic_impl.hpp"
 
 namespace fresh
 {
@@ -37,21 +37,21 @@ namespace fresh
         using event_traits = null_signal;
     };
     
-    template <class OwnerType, class EventTraits = default_signal>
+    template <class OwnerType, class EventTraits = null_signal>
     struct dynamic
     {
         using owner_type = OwnerType;
         using event_traits = EventTraits;
     };
     
-    template <class EventTraits = default_signal>
+    template <class EventTraits = null_signal>
     struct writable
     {
         using event_traits = EventTraits;
     };
     
     template <class WriterType,
-              class EventTraits = default_signal>
+              class EventTraits = null_signal>
     struct writable_by
     {
     public:
