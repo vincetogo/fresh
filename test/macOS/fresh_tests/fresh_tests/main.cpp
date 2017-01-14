@@ -27,7 +27,8 @@ namespace
     public:
         A() :
             f3(this),
-            f5(this, f3, f4)
+            f5(this, f3, f4),
+            f6(this)
         {
         }
         
@@ -35,14 +36,14 @@ namespace
         {
         }
         
-        property<std::shared_ptr<A>>            another_a;
+        property<std::shared_ptr<A>>        another_a;
         
-        property<float, light>                  f1 = 3;
-        property<float, writable_by<A>>         f2 = 3;
-        property<int, read_only>                i1 = 14;
-        property<int, light>                    i2 = 14;
+        property<float>                     f1 = 3;
+        property<float, writable_by<A>>     f2 = 3;
+        property<int, read_only>            i1 = 14;
+        property<int>                       i2 = 14;
         
-        property<int, writable<default_signal>> counter = 0;
+        property<int, writable<observable>> counter = 0;
         
         const float&
         get_f3() const
@@ -57,8 +58,8 @@ namespace
             f3.send();
         }
         
-        property<float&, dynamic<A, default_signal>, &A::get_f3, &A::set_f3> f3;
-        property<float, writable<default_signal>>   f4 = 3.0f;
+        property<float&, dynamic<A, observable>, &A::get_f3, &A::set_f3> f3;
+        property<float, writable<observable>>   f4 = 3.0f;
         
         float
         get_f5() const
@@ -66,7 +67,8 @@ namespace
             return f3() + f4();
         }
         
-        property<float, dynamic<A, default_signal>, &A::get_f5>              f5;
+        property<float, dynamic<A, observable>, &A::get_f5>   f5;
+        property<float, dynamic<A>, &A::get_f5>   f6;
         
         void func()
         {
@@ -83,6 +85,7 @@ int main(int argc, const char * argv[])
 {
     A a;
     
+    //a.f1.connect([](){}); // Error: f1 is not observable
     a.f1 = 4.0f;
     a.i2 = 3;
     //a.f2 = 4.0f; // Error: f2 is only writable by A

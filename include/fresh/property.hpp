@@ -15,60 +15,95 @@ namespace fresh
 {
     // signal types
     
-    struct default_signal
+    struct null_signal
     {
-        using connection_type = connection;
-        using signal_type = event<void()>;
+    };
+    
+    struct null_connection
+    {
+    };
+    
+    template <class Event, class Connection, bool ThreadSafe>
+    struct property_attributes
+    {
+        using connection_type = Connection;
+        using event_type = Event;
+        static const bool thread_safe = ThreadSafe;
+    };
+    
+    template <bool ThreadSafe>
+    struct basic_unobservable :
+        public property_attributes<null_signal, null_connection, ThreadSafe>
+    {
+        using base =
+            property_attributes<null_signal, null_connection, ThreadSafe>;
+        
+        using connection_type = typename base::connection_type;
+        using event_type = typename base::event_type;
         
         template<class... Args>
         static connection_type
-        connect(signal_type& sig, Args... args)
+        connect(event_type& sig, Args... args)
+        {
+            assert(false); // we should never get here
+            
+            return null_connection();
+        }
+    };
+    
+    template <bool ThreadSafe>
+    struct basic_observable :
+        public property_attributes<event<void()>, connection, ThreadSafe>
+    {
+        using base = property_attributes<event<void()>, connection, ThreadSafe>;
+        
+        using connection_type = typename base::connection_type;
+        using event_type = typename base::event_type;
+        
+        template<class... Args>
+        static connection_type
+        connect(event_type& sig, Args... args)
         {
             return sig.connect(args...);
         }
     };
     
-    struct null_signal
-    {
-    };
-    
+    // useful aliases
+    using observable = basic_observable<false>;
+    using thread_safe = basic_unobservable<true>;
+    using thread_safe_observable = basic_observable<true>;
+    using unobservable = basic_unobservable<false>;
+
+    // what we usually want
+    using default_attributes = unobservable;
+
     struct read_only
     {
-        using event_traits = null_signal;
+        using attributes = default_attributes;
     };
     
-    template <class OwnerType, class PropertyTraits = null_signal>
+    template <class OwnerType, class Attributes = default_attributes>
     struct dynamic
     {
         using owner_type = OwnerType;
-        using event_traits = PropertyTraits;
+        using attributes = Attributes;
     };
     
-    template <class PropertyTraits = null_signal>
+    template <class Attributes = default_attributes>
     struct writable
     {
-        using event_traits = PropertyTraits;
+        using attributes = Attributes;
     };
     
     template <class WriterType,
-              class PropertyTraits = null_signal>
+              class Attributes = default_attributes>
     struct writable_by
     {
     public:
         using writer = WriterType;
         
-        using event_traits = PropertyTraits;
+        using attributes = Attributes;
     };
-    
-    using light = writable<null_signal>;
-
-    template <class OwnerType>
-    using light_dynamic = dynamic<OwnerType, null_signal>;
-    
-    using light_writable = writable<null_signal>;
-    
-    template <class WriterType>
-    using light_writable_by = writable_by<WriterType, null_signal>;
     
 #ifdef __cpp_template_auto
 
@@ -79,32 +114,32 @@ namespace fresh
     
     template <class T,
         class Owner,
-        class PropertyTraits,
+        class Attributes,
         typename property_details::getter<T, Owner>::type Getter>
-    class property<T, dynamic<Owner, PropertyTraits>, Getter> :
-        public property_details::gettable<T, Owner, PropertyTraits, Getter>
+    class property<T, dynamic<Owner, Attributes>, Getter> :
+        public property_details::gettable<T, Owner, Attributes, Getter>
     {
     public:
         
         using base = property_details::
-            gettable<T, Owner, PropertyTraits, Getter>;
+            gettable<T, Owner, Attributes, Getter>;
         
         using base::base;
     };
     
     template <class T,
         class Owner,
-        class PropertyTraits,
+        class Attributes,
         typename property_details::getter<T, Owner>::type Getter,
         typename property_details::setter<T, Owner>::type Setter>
-    class property<T, dynamic<Owner, PropertyTraits>, Getter, Setter> :
+    class property<T, dynamic<Owner, Attributes>, Getter, Setter> :
         public property_details::
-            settable<T, Owner, PropertyTraits, Getter, Setter>
+            settable<T, Owner, Attributes, Getter, Setter>
     {
     public:
         
         using base = property_details::
-            settable<T, Owner, PropertyTraits, Getter, Setter>;
+            settable<T, Owner, Attributes, Getter, Setter>;
         
         using base::base;
         using base::operator=;
@@ -123,8 +158,8 @@ namespace fresh
     template<class PropertyType>
     struct function_params;
     
-    template<class Owner, class PropertyTraits>
-    struct function_params<dynamic<Owner, PropertyTraits>>
+    template<class Owner, class Attributes>
+    struct function_params<dynamic<Owner, Attributes>>
     {
         template <class T>
         using getter_type = typename property_details::getter<T, Owner>::type;
@@ -190,20 +225,22 @@ namespace fresh
             return !operator==(other);
         }
         
+        property& operator=(const T other) = delete;
+        
     private:
         
         const T _value;
     };
     
     template <class T,
-              class PropertyTraits>
-    class property<T, writable<PropertyTraits>> :
+              class Attributes>
+    class property<T, writable<Attributes>> :
         public property_details::writable_field
-            <T, PropertyTraits, property_details::any_class>
+            <T, Attributes, property_details::any_class>
     {
     public:
         using base = property_details::writable_field
-            <T, PropertyTraits, property_details::any_class>;
+            <T, Attributes, property_details::any_class>;
         
         using base::base;
         using base::operator=;
@@ -211,13 +248,13 @@ namespace fresh
     
     template <class T,
               class WriterType,
-              class PropertyTraits>
-    class property<T, writable_by<WriterType, PropertyTraits>> :
-        public property_details::writable_field<T, PropertyTraits, WriterType>
+              class Attributes>
+    class property<T, writable_by<WriterType, Attributes>> :
+        public property_details::writable_field<T, Attributes, WriterType>
     {
     public:
         using base =
-            property_details::writable_field<T, PropertyTraits, WriterType>;
+            property_details::writable_field<T, Attributes, WriterType>;
         
         using base::base;
         

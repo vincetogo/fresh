@@ -11,12 +11,16 @@
 #include "assignable.hpp"
 #include "format.hpp"
 #include "signaller.hpp"
+#include "traits.hpp"
 #include "../threads.hpp"
 
 #include <shared_mutex>
 
 namespace fresh
 {
+    template <class Attributes>
+    struct has_event;
+    
     namespace property_details
     {
         template <class T,
@@ -35,6 +39,7 @@ namespace fresh
         };
                 
         template <class T,
+                  class Attributes,
                   class Impl>
         class writable_field_base
         {
@@ -47,7 +52,7 @@ namespace fresh
             {
             }
             
-            writable_field_base(typename format<T>::arg_type value) :
+            writable_field_base(typename format<T, Attributes>::arg_type value) :
                 _value(value)
             {
             }
@@ -62,7 +67,7 @@ namespace fresh
             {
             }
             
-            typename format<T>::result_type operator () () const
+            typename format<T, Attributes>::result_type operator () () const
             {
                 read_lock<mutex_type> lock(_mutex);
                 
@@ -80,7 +85,7 @@ namespace fresh
             }
             
             void
-            assign(typename format<T>::arg_type rhs)
+            assign(typename format<T, Attributes>::arg_type rhs)
             {
                 {
                     write_lock<mutex_type> lock(_mutex);
@@ -97,28 +102,31 @@ namespace fresh
         };
         
         template <class T,
-                  class PropertyTraits,
-                  class SignalFriend>
+                  class Attributes,
+                  class SignalFriend,
+                  bool = has_event<Attributes>::value>
         class writable_field :
-            public writable_field_base<T,
-                writable_field<T, PropertyTraits, SignalFriend>>,
+            public writable_field_base<T, Attributes,
+                writable_field<T, Attributes, SignalFriend>>,
             public assignable<typename readable_traits<T>::value_type,
-                writable_field<T, PropertyTraits, SignalFriend>>,
-            public signaller<T, PropertyTraits, SignalFriend>
+                Attributes,
+                writable_field<T, Attributes, SignalFriend>>,
+            public signaller<T, Attributes, SignalFriend>
         {
         public:
-            using base = writable_field_base<T,
-                writable_field<T, PropertyTraits, SignalFriend>>;
+            using base = writable_field_base<T, Attributes,
+                writable_field<T, Attributes, SignalFriend>>;
             using assignable_base =
                 assignable<typename readable_traits<T>::value_type,
-                    writable_field<T, PropertyTraits, SignalFriend>>;
+                    Attributes,
+                    writable_field<T, Attributes, SignalFriend>>;
             
             writable_field() :
                 base()
             {
             }
             
-            writable_field(typename format<T>::arg_type other) :
+            writable_field(typename format<T, Attributes>::arg_type other) :
                 base(other)
             {
             }
@@ -142,24 +150,27 @@ namespace fresh
             void
             on_assign()
             {
-                signaller<T, PropertyTraits, SignalFriend>::send();
+                signaller<T, Attributes, SignalFriend>::send();
             }
         };
         
         template <class T,
+                  class Attributes,
                   class SignalFriend>
-        class writable_field<T, null_signal, SignalFriend> :
-            public writable_field_base<T,
-                writable_field<T, null_signal, SignalFriend>>,
+        class writable_field<T, Attributes, SignalFriend, false> :
+            public writable_field_base<T, Attributes,
+                writable_field<T, Attributes, SignalFriend>>,
             public assignable<typename readable_traits<T>::value_type,
-                writable_field<T, null_signal, SignalFriend>>
+                Attributes,
+                writable_field<T, Attributes, SignalFriend>>
         {
         public:
-            using base = writable_field_base<T,
-                writable_field<T, null_signal, SignalFriend>>;
+            using base = writable_field_base<T, Attributes,
+                writable_field<T, Attributes, SignalFriend>>;
             using assignable_base =
                 assignable<typename readable_traits<T>::value_type,
-                    writable_field<T, null_signal, SignalFriend>>;
+                    Attributes,
+                    writable_field<T, Attributes, SignalFriend>>;
             
             using base::base;
             using assignable_base::operator=;

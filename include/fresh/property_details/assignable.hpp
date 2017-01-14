@@ -16,13 +16,13 @@ namespace fresh
 {
     namespace property_details
     {
-        template <class T, class Impl>
+        template <class T, class Attributes, class Impl>
         class assignable
         {
         public:
             
             Impl&
-            operator += (typename format<T>::arg_type rhs)
+            operator += (typename format<T, Attributes>::arg_type rhs)
             {
                 return operator=((*(Impl*)this)() + rhs);
             }
@@ -42,7 +42,7 @@ namespace fresh
             }
             
             Impl&
-            operator -= (typename format<T>::arg_type rhs)
+            operator -= (typename format<T, Attributes>::arg_type rhs)
             {
                 return operator=((*(Impl*)this)() - rhs);
             }
@@ -64,7 +64,7 @@ namespace fresh
         protected:
             
             Impl&
-            operator = (typename format<T>::arg_type rhs)
+            operator = (typename format<T, Attributes>::arg_type rhs)
             {
                 ((Impl*)this)->assign(rhs);
                 return *(Impl*)this;
@@ -78,8 +78,8 @@ namespace fresh
             }
         };
         
-        template <class T, class Impl>
-        class assignable<std::atomic<T>, Impl>
+        template <class T, class Attributes, class Impl>
+        class assignable<std::atomic<T>, Attributes, Impl>
         {
         public:
             
