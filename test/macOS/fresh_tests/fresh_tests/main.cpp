@@ -13,6 +13,9 @@
 #include <memory>
 #include <thread>
 
+//import std.vector;
+#include <vector>
+
 extern void event_test();
 
 namespace
@@ -82,9 +85,9 @@ int main(int argc, const char * argv[])
     
     a.f1 = 4.0f;
     a.i2 = 3;
-    //a.f2 = 4.0f; -> Error: f2 is only writable by A
-    //a.i1 = 18; -> Error: i1 is read_only
-    //a.f3 = 5.0f; -> Error: f3 doesn't have a setter
+    //a.f2 = 4.0f; // Error: f2 is only writable by A
+    //a.i1 = 18; // Error: i1 is read_only
+    //a.f5 = 5.0f; // Error: f5 doesn't have a setter
     a.f4 = 5.0f;
     
     /*a.f3.connect(

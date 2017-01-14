@@ -252,9 +252,14 @@ private:
     using connection_set_type =
         std::set
             <connection, std::less<connection>, Alloc<connection>>;
+    
+    using source_map_alloc_type = Alloc<std::pair<void* const, source_type>>;
 
     using source_map_type =
-        std::map<void*, source_type, std::less<void*>, Alloc<source_type>>;
+        std::map<void*,
+            source_type,
+            std::less<void*>,
+            source_map_alloc_type>;
     
     bool                    _can_clean = true;
     connection_set_type     _invalid_connections;

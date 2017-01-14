@@ -70,6 +70,56 @@ namespace fresh
     template <class WriterType>
     using light_writable_by = writable_by<WriterType, null_signal>;
     
+#ifdef __cpp_template_auto
+
+    template <class T,
+              class PropertyType = writable<>,
+              auto... Args>
+    class property;
+    
+    template <class T,
+        class Owner,
+        class PropertyTraits,
+        typename property_details::getter<T, Owner>::type Getter>
+    class property<T, dynamic<Owner, PropertyTraits>, Getter> :
+        public property_details::gettable<T, Owner, PropertyTraits, Getter>
+    {
+    public:
+        
+        using base = property_details::
+            gettable<T, Owner, PropertyTraits, Getter>;
+        
+        using base::base;
+    };
+    
+    template <class T,
+        class Owner,
+        class PropertyTraits,
+        typename property_details::getter<T, Owner>::type Getter,
+        typename property_details::setter<T, Owner>::type Setter>
+    class property<T, dynamic<Owner, PropertyTraits>, Getter, Setter> :
+        public property_details::
+            settable<T, Owner, PropertyTraits, Getter, Setter>
+    {
+    public:
+        
+        using base = property_details::
+            settable<T, Owner, PropertyTraits, Getter, Setter>;
+        
+        using base::base;
+        using base::operator=;
+    };
+    
+    template <class T, class PropertyType, auto Getter, auto... Rest>
+    using dynamic_property
+        = property<T, PropertyType, Getter, Rest...>;
+    
+    
+#else
+    
+    template <class T, class PropertyType = writable<>>
+    class property;
+    
     template<class PropertyType>
     struct function_params;
     
@@ -81,77 +131,33 @@ namespace fresh
         
         template <class T>
         using setter_type = typename property_details::setter<T, Owner>::type;
-        
-        constexpr static auto default_value() -> std::nullptr_t
-        {
-            return nullptr;
-        }
     };
     
-    struct field_function_params
-    {
-        template <class T>
-        using getter_type = bool;
-        
-        template <class T>
-        using setter_type = bool;
-        
-        constexpr static int default_value()
-        {
-            return false;
-        }
-    };
-    
-    template<>
-    struct function_params<read_only> :
-        public field_function_params
-    {
-    };
-    
-    template<class PropertyTraits>
-    struct function_params<writable<PropertyTraits>> :
-        public field_function_params
-    {
-    };
-    
-    template<class W, class PropertyTraits>
-    struct function_params<writable_by<W, PropertyTraits>> :
-        public field_function_params
-    {
-    };
-    
-    template <class T,
-              class PropertyType = writable<>,
-              typename function_params<PropertyType>::template getter_type<T> Getter =
-                function_params<PropertyType>::default_value(),
-              typename function_params<PropertyType>::template setter_type<T> Setter =
-                function_params<PropertyType>::default_value()>
-    class property :
-        public property_details::dynamic_impl<
-            T,
-            PropertyType,
-            std::integral_constant
-                <typename function_params<PropertyType>::template getter_type<T>, Getter>,
-            std::integral_constant
-                <typename function_params<PropertyType>::template setter_type<T>, Setter>>
+    template <class T, class PropertyType,
+        typename function_params<PropertyType>::template getter_type<T> Getter,
+        typename function_params<PropertyType>::template setter_type<T> Setter
+            = nullptr>
+    class dynamic_property :
+        public property_details::dynamic_impl<T, PropertyType,
+            std::integral_constant<typename function_params<PropertyType>::template getter_type<T>, Getter>,
+            std::integral_constant<typename function_params<PropertyType>::template setter_type<T>, Setter>>
     {
     public:
-        using base = property_details::dynamic_impl<
-            T,
-            PropertyType,
-            std::integral_constant
-                <typename function_params<PropertyType>::template getter_type<T>, Getter>,
-            std::integral_constant
-                <typename function_params<PropertyType>::template setter_type<T>, Setter>>;
+        using base = property_details::dynamic_impl<T, PropertyType,
+            std::integral_constant<typename function_params<PropertyType>::
+                template getter_type<T>, Getter>,
+            std::integral_constant<typename function_params<PropertyType>::
+                template setter_type<T>, Setter>>;
         
         using base::base;
         using base::operator=;
     };
     
-    template <class T, bool Getter, bool Setter>
-    class property<T, read_only, Getter, Setter>
+#endif
+    
+    template <class T>
+    class property<T, read_only>
     {
-        static_assert(!Getter && !Setter, "Invalid read_only property declaration");
     public:
         
         property(T value) :
@@ -190,16 +196,11 @@ namespace fresh
     };
     
     template <class T,
-              class PropertyTraits,
-              bool Getter,
-              bool Setter>
-    class property<T, writable<PropertyTraits>, Getter, Setter> :
+              class PropertyTraits>
+    class property<T, writable<PropertyTraits>> :
         public property_details::writable_field
             <T, PropertyTraits, property_details::any_class>
     {
-        static_assert(!Getter && !Setter,
-                      "Invalid writable property declaration");
-        
     public:
         using base = property_details::writable_field
             <T, PropertyTraits, property_details::any_class>;
@@ -210,14 +211,10 @@ namespace fresh
     
     template <class T,
               class WriterType,
-              class PropertyTraits,
-              bool Getter, bool Setter>
-    class property<T, writable_by<WriterType, PropertyTraits>, Getter, Setter> :
+              class PropertyTraits>
+    class property<T, writable_by<WriterType, PropertyTraits>> :
         public property_details::writable_field<T, PropertyTraits, WriterType>
     {
-        static_assert(!Getter && !Setter,
-                      "Invalid writable_by property declaration");
-        
     public:
         using base =
             property_details::writable_field<T, PropertyTraits, WriterType>;
