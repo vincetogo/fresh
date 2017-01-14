@@ -13,7 +13,6 @@
 #ifdef __APPLE__
 
 #include <AvailabilityMacros.h>
-
     #if MACOSX_DEPLOYMENT_TARGET > MACOS_X_VERSION_10_11
 
 #define FRESH_USE_STD_SHARED_MUTEX 1
@@ -30,11 +29,13 @@
 
 
 namespace fresh
-{
-    class atomic_mutex
+{    
+    class null_mutex
     {
         
     };
+    
+    using atomic_mutex = null_mutex;
 
 #if FRESH_USE_STD_SHARED_MUTEX
     using shared_mutex = std::shared_timed_mutex;
@@ -61,28 +62,28 @@ namespace fresh
 namespace std
 {
     template <>
-    class lock_guard<fresh::atomic_mutex>
+    class lock_guard<fresh::null_mutex>
     {
     public:
-        lock_guard(fresh::atomic_mutex&)
+        lock_guard(fresh::null_mutex&)
         {
         }
     };
     
     template <>
-    class shared_lock<fresh::atomic_mutex>
+    class shared_lock<fresh::null_mutex>
     {
     public:
-        shared_lock(fresh::atomic_mutex&)
+        shared_lock(fresh::null_mutex&)
         {
         }
     };
     
     template <>
-    class unique_lock<fresh::atomic_mutex>
+    class unique_lock<fresh::null_mutex>
     {
     public:
-        unique_lock(fresh::atomic_mutex&)
+        unique_lock(fresh::null_mutex&)
         {
         }
     };

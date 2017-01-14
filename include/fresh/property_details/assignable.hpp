@@ -8,7 +8,7 @@
 #ifndef fresh_property_details_assignable_hpp
 #define fresh_property_details_assignable_hpp
 
-#include "format.hpp"
+#include "traits.hpp"
 
 #include <cstddef>
 
@@ -21,8 +21,10 @@ namespace fresh
         {
         public:
             
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            
             Impl&
-            operator += (typename format<T, Attributes>::arg_type rhs)
+            operator += (arg_type rhs)
             {
                 return operator=((*(Impl*)this)() + rhs);
             }
@@ -42,7 +44,7 @@ namespace fresh
             }
             
             Impl&
-            operator -= (typename format<T, Attributes>::arg_type rhs)
+            operator -= (arg_type rhs)
             {
                 return operator=((*(Impl*)this)() - rhs);
             }
@@ -64,7 +66,7 @@ namespace fresh
         protected:
             
             Impl&
-            operator = (typename format<T, Attributes>::arg_type rhs)
+            operator = (arg_type rhs)
             {
                 ((Impl*)this)->assign(rhs);
                 return *(Impl*)this;

@@ -43,7 +43,7 @@ namespace
         property<int, read_only>            i1 = 14;
         property<int>                       i2 = 14;
         
-        property<int, writable<observable>> counter = 0;
+        property<int, writable<thread_safe_observable>> counter = 0;
         
         const float&
         get_f3() const

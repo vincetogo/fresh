@@ -9,7 +9,6 @@
 #define fresh_property_details_field_properties_hpp
 
 #include "assignable.hpp"
-#include "format.hpp"
 #include "signaller.hpp"
 #include "traits.hpp"
 #include "../threads.hpp"
@@ -24,35 +23,23 @@ namespace fresh
     namespace property_details
     {
         template <class T,
-            bool = std::is_integral<T>::value && !std::is_same<T, bool>::value>
-        struct readable_traits
-        {
-            using mutex_type = fresh::shared_mutex;
-            using value_type = T;
-        };
-        
-        template <class T>
-        struct readable_traits<T, true>
-        {
-            using mutex_type = fresh::atomic_mutex;
-            using value_type = std::atomic<T>;
-        };
-                
-        template <class T,
                   class Attributes,
                   class Impl>
         class writable_field_base
         {
         public:
             
-            using mutex_type = typename readable_traits<T>::mutex_type;
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using mutex_type = typename property_traits<T, Attributes>::mutex_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            using value_type = typename property_traits<T, Attributes>::value_type;
             
             writable_field_base() :
                 _value()
             {
             }
             
-            writable_field_base(typename format<T, Attributes>::arg_type value) :
+            writable_field_base(arg_type value) :
                 _value(value)
             {
             }
@@ -67,7 +54,7 @@ namespace fresh
             {
             }
             
-            typename format<T, Attributes>::result_type operator () () const
+            result_type operator () () const
             {
                 read_lock<mutex_type> lock(_mutex);
                 
@@ -85,7 +72,7 @@ namespace fresh
             }
             
             void
-            assign(typename format<T, Attributes>::arg_type rhs)
+            assign(arg_type rhs)
             {
                 {
                     write_lock<mutex_type> lock(_mutex);
@@ -97,8 +84,8 @@ namespace fresh
             
         protected:
             
-            mutable typename readable_traits<T>::mutex_type _mutex;
-            typename readable_traits<T>::value_type         _value;
+            mutable mutex_type  _mutex;
+            value_type          _value;
         };
         
         template <class T,
@@ -108,7 +95,7 @@ namespace fresh
         class writable_field :
             public writable_field_base<T, Attributes,
                 writable_field<T, Attributes, SignalFriend>>,
-            public assignable<typename readable_traits<T>::value_type,
+            public assignable<typename readable_traits<T, Attributes>::value_type,
                 Attributes,
                 writable_field<T, Attributes, SignalFriend>>,
             public signaller<T, Attributes, SignalFriend>
@@ -117,16 +104,18 @@ namespace fresh
             using base = writable_field_base<T, Attributes,
                 writable_field<T, Attributes, SignalFriend>>;
             using assignable_base =
-                assignable<typename readable_traits<T>::value_type,
+                assignable<typename readable_traits<T, Attributes>::value_type,
                     Attributes,
                     writable_field<T, Attributes, SignalFriend>>;
+            
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
             
             writable_field() :
                 base()
             {
             }
             
-            writable_field(typename format<T, Attributes>::arg_type other) :
+            writable_field(arg_type other) :
                 base(other)
             {
             }
@@ -160,7 +149,7 @@ namespace fresh
         class writable_field<T, Attributes, SignalFriend, false> :
             public writable_field_base<T, Attributes,
                 writable_field<T, Attributes, SignalFriend>>,
-            public assignable<typename readable_traits<T>::value_type,
+            public assignable<typename readable_traits<T, Attributes>::value_type,
                 Attributes,
                 writable_field<T, Attributes, SignalFriend>>
         {
@@ -168,7 +157,7 @@ namespace fresh
             using base = writable_field_base<T, Attributes,
                 writable_field<T, Attributes, SignalFriend>>;
             using assignable_base =
-                assignable<typename readable_traits<T>::value_type,
+                assignable<typename readable_traits<T, Attributes>::value_type,
                     Attributes,
                     writable_field<T, Attributes, SignalFriend>>;
             

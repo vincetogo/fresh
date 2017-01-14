@@ -8,8 +8,8 @@
 #ifndef fresh_property_details_dynamic_properties_hpp
 #define fresh_property_details_dynamic_properties_hpp
 
-#include "format.hpp"
 #include "signaller.hpp"
+#include "traits.hpp"
 
 #include <vector>
 
@@ -96,6 +96,9 @@ namespace fresh
         {
         public:
             
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            
             template<class... Properties>
             gettable(D* host, Properties&... properties) :
                 _host(host)
@@ -108,17 +111,17 @@ namespace fresh
             {
             }
             
-            auto operator()() const -> typename format<T, Attributes>::result_type
+            auto operator()() const -> result_type
             {
                 return (_host->*Getter)();
             }
             
-            bool operator == (typename format<T, Attributes>::arg_type other)
+            bool operator == (arg_type other)
             {
                 return (*this) == other;
             }
             
-            bool operator != (typename format<T, Attributes>::arg_type other)
+            bool operator != (arg_type other)
             {
                 return !(*this) == other;
             }
@@ -136,10 +139,13 @@ namespace fresh
         {
         public:
             
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            
             using gettable<T, D, Attributes, Getter>::gettable;
             
             settable&
-            operator += (typename format<T, Attributes>::arg_type rhs)
+            operator += (arg_type rhs)
             {
                 return operator=((*this)() + rhs);
             }
@@ -159,7 +165,7 @@ namespace fresh
             }
             
             settable&
-            operator -= (typename format<T, Attributes>::arg_type rhs)
+            operator -= (arg_type rhs)
             {
                 return operator=((*this)() - rhs);
             }
@@ -179,7 +185,7 @@ namespace fresh
             }
             
             settable&
-            operator = (typename format<T, Attributes>::arg_type rhs)
+            operator = (arg_type rhs)
             {
                 assign(rhs);
                 return *this;
@@ -194,7 +200,7 @@ namespace fresh
             
         private:
             
-            void assign(typename format<T, Attributes>::arg_type rhs)
+            void assign(arg_type rhs)
             {
                 (gettable<T, D, Attributes, Getter>::_host->*Setter)(rhs);
             }

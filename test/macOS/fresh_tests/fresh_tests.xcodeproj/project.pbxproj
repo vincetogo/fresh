@@ -32,7 +32,6 @@
 		61DE7AF21E1C79B200526942 /* assignable.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = assignable.hpp; sourceTree = "<group>"; };
 		61DE7AF31E1C79B200526942 /* dynamic_impl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = dynamic_impl.hpp; sourceTree = "<group>"; };
 		61DE7AF41E1C79B200526942 /* writable_field.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = writable_field.hpp; sourceTree = "<group>"; };
-		61DE7AF51E1C79B200526942 /* format.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = format.hpp; sourceTree = "<group>"; };
 		61DE7AF61E1C79B200526942 /* signaller.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = signaller.hpp; sourceTree = "<group>"; };
 		61DE7AF81E1C79B200526942 /* threads.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = threads.hpp; sourceTree = "<group>"; };
 		61DE7AFA1E1CA2C000526942 /* event_test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = event_test.cpp; sourceTree = "<group>"; };
@@ -101,7 +100,6 @@
 				61DE7AF21E1C79B200526942 /* assignable.hpp */,
 				61DE7AF31E1C79B200526942 /* dynamic_impl.hpp */,
 				61DE7AF41E1C79B200526942 /* writable_field.hpp */,
-				61DE7AF51E1C79B200526942 /* format.hpp */,
 				61DE7AF61E1C79B200526942 /* signaller.hpp */,
 				616781061E2AB8FB00F10106 /* traits.hpp */,
 			);
