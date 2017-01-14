@@ -1,5 +1,5 @@
 Useful utility classes
 
-signal - templates which allows you to add the observer pattern to your designs. Its interface should be familiar to anyone who has used boost::signals2
+event - templated class which allow you to easily add the observer pattern to your designs
 
-property - templates for high-level style accessors and mutators, which adopt the observer pattern using signal to notify interested objects that they've changed. (Signal-less 'light' versions of the properties are available when the observer pattern isn't needed).
+property - templated class for high-level style accessors and mutators, and come in a variety of flavours - a basic field version, a read-only field, a field that's writable only by a specified class (useful for properties that should be accessible by other classes but only writable by the class that owns the property), and dynamic versions, which can either have just a getter function or a getter and setter. Properties can also be thread safe and/or observable using the event class mentioned above
