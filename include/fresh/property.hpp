@@ -8,6 +8,16 @@
 #ifndef fresh_property_hpp
 #define fresh_property_hpp
 
+#ifdef __cpp_template_auto
+
+    #define FRESH_REQUIRES_DYNAMIC_PROPERTY_TEMPLATE 0
+
+#else
+
+    #define FRESH_REQUIRES_DYNAMIC_PROPERTY_TEMPLATE 1
+
+#endif
+
 #include "property_details/writable_field.hpp"
 #include "property_details/dynamic_impl.hpp"
 
@@ -32,26 +42,6 @@ namespace fresh
     };
     
     template <bool ThreadSafe>
-    struct basic_unobservable :
-        public property_attributes<null_signal, null_connection, ThreadSafe>
-    {
-        using base =
-            property_attributes<null_signal, null_connection, ThreadSafe>;
-        
-        using connection_type = typename base::connection_type;
-        using event_type = typename base::event_type;
-        
-        template<class... Args>
-        static connection_type
-        connect(event_type& sig, Args... args)
-        {
-            assert(false); // we should never get here
-            
-            return null_connection();
-        }
-    };
-    
-    template <bool ThreadSafe>
     struct basic_observable :
         public property_attributes<event<void()>, connection, ThreadSafe>
     {
@@ -70,9 +60,9 @@ namespace fresh
     
     // useful aliases
     using observable = basic_observable<false>;
-    using thread_safe = basic_unobservable<true>;
+    using thread_safe = property_attributes<null_signal, null_connection, true>;
     using thread_safe_observable = basic_observable<true>;
-    using unobservable = basic_unobservable<false>;
+    using unobservable = property_attributes<null_signal, null_connection, false>;
 
     // what we usually want
     using default_attributes = unobservable;
@@ -105,88 +95,67 @@ namespace fresh
         using attributes = Attributes;
     };
     
-#ifdef __cpp_template_auto
+#if FRESH_REQUIRES_DYNAMIC_PROPERTY_TEMPLATE
 
-    template <class T,
-              class PropertyType = writable<>,
-              auto... Args>
+    template <class T, class PropertyType = writable<>>
     class property;
     
-    template <class T,
-        class Owner,
-        class Attributes,
+    template <class T, class PropertyType,
+        typename property_details::function_params<PropertyType>::template getter_type<T> Getter,
+        typename property_details::function_params<PropertyType>::template setter_type<T> Setter
+            = nullptr>
+    class dynamic_property :
+        public property_details::dynamic_impl<T, PropertyType,
+            std::integral_constant<typename property_details::function_params<PropertyType>::template getter_type<T>, Getter>,
+            std::integral_constant<typename property_details::function_params<PropertyType>::template setter_type<T>, Setter>>
+    {
+    public:
+        using base = property_details::dynamic_impl<T, PropertyType,
+            std::integral_constant<typename property_details::function_params<PropertyType>::
+                template getter_type<T>, Getter>,
+            std::integral_constant<typename property_details::function_params<PropertyType>::
+                template setter_type<T>, Setter>>;
+        
+        using base::base;
+        using base::operator=;
+    };
+    
+#else
+    
+    
+    template <class T, class PropertyType = writable<>, auto... Args>
+    class property;
+    
+    template <class T, class Owner, class Attributes,
         typename property_details::getter<T, Owner>::type Getter>
-    class property<T, dynamic<Owner, Attributes>, Getter> :
-        public property_details::gettable<T, Owner, Attributes, Getter>
+        class property<T, dynamic<Owner, Attributes>, Getter> :
+    public property_details::gettable<T, Owner, Attributes, Getter>
     {
     public:
         
         using base = property_details::
-            gettable<T, Owner, Attributes, Getter>;
+        gettable<T, Owner, Attributes, Getter>;
         
         using base::base;
     };
     
-    template <class T,
-        class Owner,
-        class Attributes,
+    template <class T, class Owner, class Attributes,
         typename property_details::getter<T, Owner>::type Getter,
         typename property_details::setter<T, Owner>::type Setter>
     class property<T, dynamic<Owner, Attributes>, Getter, Setter> :
-        public property_details::
-            settable<T, Owner, Attributes, Getter, Setter>
+    public property_details::settable<T, Owner, Attributes, Getter, Setter>
     {
     public:
         
         using base = property_details::
-            settable<T, Owner, Attributes, Getter, Setter>;
+        settable<T, Owner, Attributes, Getter, Setter>;
         
         using base::base;
         using base::operator=;
     };
     
     template <class T, class PropertyType, auto Getter, auto... Rest>
-    using dynamic_property
-        = property<T, PropertyType, Getter, Rest...>;
-    
-    
-#else
-    
-    template <class T, class PropertyType = writable<>>
-    class property;
-    
-    template<class PropertyType>
-    struct function_params;
-    
-    template<class Owner, class Attributes>
-    struct function_params<dynamic<Owner, Attributes>>
-    {
-        template <class T>
-        using getter_type = typename property_details::getter<T, Owner>::type;
-        
-        template <class T>
-        using setter_type = typename property_details::setter<T, Owner>::type;
-    };
-    
-    template <class T, class PropertyType,
-        typename function_params<PropertyType>::template getter_type<T> Getter,
-        typename function_params<PropertyType>::template setter_type<T> Setter
-            = nullptr>
-    class dynamic_property :
-        public property_details::dynamic_impl<T, PropertyType,
-            std::integral_constant<typename function_params<PropertyType>::template getter_type<T>, Getter>,
-            std::integral_constant<typename function_params<PropertyType>::template setter_type<T>, Setter>>
-    {
-    public:
-        using base = property_details::dynamic_impl<T, PropertyType,
-            std::integral_constant<typename function_params<PropertyType>::
-                template getter_type<T>, Getter>,
-            std::integral_constant<typename function_params<PropertyType>::
-                template setter_type<T>, Setter>>;
-        
-        using base::base;
-        using base::operator=;
-    };
+    using dynamic_property = property<T, PropertyType, Getter, Rest...>;
     
 #endif
     

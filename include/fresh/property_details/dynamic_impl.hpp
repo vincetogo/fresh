@@ -240,7 +240,22 @@ namespace fresh
         public:
             using gettable<T, D, Attributes, Getter>::gettable;
         };
-    }    
+        
+#if FRESH_REQUIRES_DYNAMIC_PROPERTY_TEMPLATE
+        template<class PropertyType>
+        struct function_params;
+        
+        template<class Owner, class Attributes>
+        struct function_params<dynamic<Owner, Attributes>>
+        {
+            template <class T>
+            using getter_type = typename getter<T, Owner>::type;
+            
+            template <class T>
+            using setter_type = typename setter<T, Owner>::type;
+        };
+#endif
+    }
 }
 
 #endif

@@ -22,10 +22,20 @@ namespace fresh
         public:
             
             using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            
+            result_type operator () () const
+            {
+                read_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                
+                return ((Impl*)this)->_value;
+            }
             
             Impl&
             operator += (arg_type rhs)
             {
+                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                
                 return operator=((*(Impl*)this)() + rhs);
             }
             
@@ -38,6 +48,8 @@ namespace fresh
             T
             operator ++ (int)
             {
+                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                
                 T result = (*(Impl*)this)();
                 ++(*this);
                 return result;
@@ -46,6 +58,8 @@ namespace fresh
             Impl&
             operator -= (arg_type rhs)
             {
+                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                
                 return operator=((*(Impl*)this)() - rhs);
             }
             
@@ -58,6 +72,8 @@ namespace fresh
             T
             operator -- (int)
             {
+                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                
                 T result = (*(Impl*)this)();
                 --(*this);
                 return result;
@@ -78,12 +94,28 @@ namespace fresh
                 ((Impl*)this)->assign(nullptr);
                 return *(Impl*)this;
             }
+            
+            void
+            assign(arg_type rhs)
+            {
+                {
+                    write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                    ((Impl*)this)->_value = rhs;
+                }
+                
+                ((Impl*)this)->on_assign();
+            }
         };
         
         template <class T, class Attributes, class Impl>
         class assignable<std::atomic<T>, Attributes, Impl>
         {
         public:
+            
+            T operator () () const
+            {
+                return ((Impl*)this)->_value;
+            }
             
             Impl&
             operator += (T rhs)

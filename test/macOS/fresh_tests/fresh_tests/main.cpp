@@ -36,7 +36,7 @@ namespace
         {
         }
         
-        property<std::shared_ptr<A>>        another_a;
+        property<std::shared_ptr<A>, writable<thread_safe>>        another_a;
         
         property<float>                     f1 = 3;
         property<float, writable_by<A>>     f2 = 3;
@@ -149,6 +149,9 @@ int main(int argc, const char * argv[])
     //printf("f3: %f\n", a.f3());
     
     event_test();
+    
+    a.another_a = std::make_shared<A>();
+    a.another_a = std::make_shared<A>();
     
     return 0;
 }

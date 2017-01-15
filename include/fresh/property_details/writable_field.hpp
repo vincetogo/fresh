@@ -54,32 +54,14 @@ namespace fresh
             {
             }
             
-            result_type operator () () const
-            {
-                read_lock<mutex_type> lock(_mutex);
-                
-                return _value;
-            }
-            
             bool operator == (T other) const
             {
-                return operator()() == other;
+                return ((Impl*)this)->operator()() == other;
             }
             
             bool operator != (T other) const
             {
                 return !operator==(other);
-            }
-            
-            void
-            assign(arg_type rhs)
-            {
-                {
-                    write_lock<mutex_type> lock(_mutex);
-                    _value = rhs;
-                }
-                
-                ((Impl*)this)->on_assign();
             }
             
         protected:
