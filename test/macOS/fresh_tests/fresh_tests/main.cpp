@@ -79,6 +79,13 @@ namespace
     private:
         float _f3 = 2.0f;
     };
+    
+    class B
+    {
+    public:
+        
+        property<A>     a;
+    };
 }
 
 int main(int argc, const char * argv[])
@@ -152,6 +159,10 @@ int main(int argc, const char * argv[])
     
     a.another_a = std::make_shared<A>();
     a.another_a = std::make_shared<A>();
+    
+    //B b;
+    
+    //b.a += a;
     
     return 0;
 }

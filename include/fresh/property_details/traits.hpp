@@ -106,6 +106,62 @@ namespace fresh
             static_assert(!Attributes::thread_safe,
                           "Thread-safe properties cannot return by reference.");
         };
+        
+        struct does_not_exist {};
+        
+        template<typename T, typename Arg> does_not_exist operator==
+        (const T&, const Arg&);
+        
+        template<typename T, typename Arg> does_not_exist operator+
+        (const T&, const Arg&);
+
+        template<typename T, typename Arg> does_not_exist operator-
+        (const T&, const Arg&);
+
+        template <class T, class Arg = T>
+        struct has_add
+        {
+            static const bool value =
+                !std::is_same<decltype(std::declval<T>() + std::declval<Arg>()),
+                    does_not_exist>::value;
+        };
+        
+        template <class T, class Arg>
+        struct has_add<std::atomic<T>, Arg>
+        {
+            static const bool value =
+                has_add<T>::value;
+        };
+        
+        template <class T, class Arg = T>
+        struct has_compare
+        {
+            static const bool value =
+                !std::is_same<decltype(std::declval<T>() == std::declval<Arg>()),
+                    does_not_exist>::value;
+        };
+        
+        template <class T, class Arg>
+        struct has_compare<std::atomic<T>, Arg>
+        {
+            static const bool value =
+                has_compare<T>::value;
+        };
+        
+        template <class T, class Arg = T>
+        struct has_subtract
+        {
+            static const bool value =
+                !std::is_same<decltype(std::declval<T>() - std::declval<Arg>()),
+                    does_not_exist>::value;
+        };
+        
+        template <class T, class Arg>
+        struct has_subtract<std::atomic<T>, Arg>
+        {
+            static const bool value =
+                has_subtract<T>::value;
+        };
     }
 }
 

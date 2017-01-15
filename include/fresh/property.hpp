@@ -205,11 +205,11 @@ namespace fresh
               class Attributes>
     class property<T, writable<Attributes>> :
         public property_details::writable_field
-            <T, Attributes, property_details::any_class>
+            <T, Attributes, void>
     {
     public:
         using base = property_details::writable_field
-            <T, Attributes, property_details::any_class>;
+            <T, Attributes, void>;
         
         using base::base;
         using base::operator=;

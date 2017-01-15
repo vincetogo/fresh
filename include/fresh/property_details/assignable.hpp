@@ -17,36 +17,37 @@ namespace fresh
     namespace property_details
     {
         template <class T, class Attributes, class Impl>
-        class assignable
+        class assignable;
+        
+        template <class T, class Assignable, bool = has_add<T>::value>
+        class assignable_add
         {
-        public:
+        };
+        
+        template <class T, class Attributes, class Impl>
+        class assignable_add<T, assignable<T, Attributes, Impl>, true>
+        {
+            using Assignable = assignable<T, Attributes, Impl>;
             
+        public:
             using arg_type = typename property_traits<T, Attributes>::arg_type;
             using result_type = typename property_traits<T, Attributes>::result_type;
             
-            result_type operator () () const
-            {
-                read_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
-                
-                return ((Impl*)this)->_value;
-            }
-            
             Impl&
-            operator += (arg_type rhs)
+            operator+= (arg_type rhs)
             {
                 write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
-                
-                return operator=((*(Impl*)this)() + rhs);
+                return ((Assignable*)this)->operator=((*(Impl*)this)() + rhs);
             }
             
             Impl&
-            operator ++ ()
+            operator++ ()
             {
                 return operator+=(1);
             }
             
             T
-            operator ++ (int)
+            operator++ (int)
             {
                 write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
                 
@@ -54,23 +55,69 @@ namespace fresh
                 ++(*this);
                 return result;
             }
+        };
+        
+        template <class T, class Attributes, class Impl>
+        class assignable_add<std::atomic<T>, assignable<std::atomic<T>, Attributes, Impl>, true>
+        {
+        public:
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
             
             Impl&
-            operator -= (arg_type rhs)
+            operator+= (T rhs)
             {
-                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                ((Impl*)this)->_value.fetch_add(rhs);
+                ((Impl*)this)->on_assign();
                 
-                return operator=((*(Impl*)this)() - rhs);
+                return *((Impl*)this);
             }
             
             Impl&
-            operator -- ()
+            operator++ ()
+            {
+                return operator+=(1);
+            }
+            
+            T
+            operator++ (int)
+            {
+                auto result = ((Impl*)this)->_value.fetch_add(1);
+                ((Impl*)this)->on_assign();
+                
+                return result;
+            }
+        };
+        
+        template <class T, class Assignable, bool = has_subtract<T>::value>
+        class assignable_subtract
+        {
+        };
+        
+        template <class T, class Attributes, class Impl>
+        class assignable_subtract<T, assignable<T, Attributes, Impl>, true>
+        {
+            using Assignable = assignable<T, Attributes, Impl>;
+            
+        public:
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            
+            Impl&
+            operator-= (arg_type rhs)
+            {
+                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                return ((Assignable*)this)->operator=((*(Impl*)this)() - rhs);
+            }
+            
+            Impl&
+            operator-- ()
             {
                 return operator-=(1);
             }
             
             T
-            operator -- (int)
+            operator-- (int)
             {
                 write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
                 
@@ -78,18 +125,71 @@ namespace fresh
                 --(*this);
                 return result;
             }
+        };
+        
+        template <class T, class Attributes, class Impl>
+        class assignable_subtract<std::atomic<T>, assignable<std::atomic<T>, Attributes, Impl>, true>
+        {
+        public:
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            
+            Impl&
+            operator-= (T rhs)
+            {
+                ((Impl*)this)->_value.fetch_add(-rhs);
+                ((Impl*)this)->on_assign();
+                
+                return *((Impl*)this);
+            }
+            
+            Impl&
+            operator-- ()
+            {
+                return operator-=(1);
+            }
+            
+            T
+            operator-- (int)
+            {
+                auto result = ((Impl*)this)->_value.fetch_add(-1);
+                ((Impl*)this)->on_assign();
+                
+                return result;
+            }
+        };
+        
+        template <class T, class Attributes, class Impl>
+        class assignable :
+            public assignable_add<T, assignable<T, Attributes, Impl>>,
+            public assignable_subtract<T, assignable<T, Attributes, Impl>>
+        {
+        public:
+            
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            
+            result_type operator() () const
+            {
+                read_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                
+                return ((Impl*)this)->_value;
+            }
             
         protected:
             
+            friend assignable_add<T, assignable<T, Attributes, Impl>>;
+            friend assignable_subtract<T, assignable<T, Attributes, Impl>>;
+            
             Impl&
-            operator = (arg_type rhs)
+            operator= (arg_type rhs)
             {
                 ((Impl*)this)->assign(rhs);
                 return *(Impl*)this;
             }
             
             Impl&
-            operator = (std::nullptr_t)
+            operator= (std::nullptr_t)
             {
                 ((Impl*)this)->assign(nullptr);
                 return *(Impl*)this;
@@ -108,69 +208,31 @@ namespace fresh
         };
         
         template <class T, class Attributes, class Impl>
-        class assignable<std::atomic<T>, Attributes, Impl>
+        class assignable<std::atomic<T>, Attributes, Impl> :
+            public assignable_add<std::atomic<T>,
+                assignable<std::atomic<T>, Attributes, Impl>>,
+            public assignable_subtract<std::atomic<T>,
+                assignable<std::atomic<T>, Attributes, Impl>>
         {
         public:
             
-            T operator () () const
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using result_type = typename property_traits<T, Attributes>::result_type;
+            
+            T operator() () const
             {
                 return ((Impl*)this)->_value;
             }
             
-            Impl&
-            operator += (T rhs)
-            {
-                ((Impl*)this)->_value.fetch_add(rhs);
-                ((Impl*)this)->on_assign();
-                
-                return *((Impl*)this);
-            }
-            
-            Impl&
-            operator ++ ()
-            {
-                return operator+=(1);
-            }
-            
-            T
-            operator ++ (int)
-            {
-                auto result = ((Impl*)this)->_value.fetch_add(1);
-                
-                ((Impl*)this)->on_assign();
-                
-                return result;
-            }
-            
-            Impl&
-            operator -= (T rhs)
-            {
-                ((Impl*)this)->_value.fetch_add(-rhs);
-                ((Impl*)this)->on_assign();
-                
-                return *((Impl*)this);
-            }
-            
-            Impl&
-            operator -- ()
-            {
-                return operator-=(1);
-            }
-            
-            T
-            operator -- (int)
-            {
-                auto result = ((Impl*)this)->_value.fetch_add(-1);
-                
-                ((Impl*)this)->on_assign();
-                
-                return result;
-            }
-            
         protected:
             
+            friend assignable_add<std::atomic<T>,
+                assignable<std::atomic<T>, Attributes, Impl>>;
+            friend assignable_subtract<std::atomic<T>,
+                assignable<std::atomic<T>, Attributes, Impl>>;
+            
             Impl&
-            operator = (T rhs)
+            operator= (T rhs)
             {
                 ((Impl*)this)->_value = rhs;
                 ((Impl*)this)->on_assign();
@@ -179,7 +241,7 @@ namespace fresh
             }
             
             Impl&
-            operator = (std::nullptr_t)
+            operator= (std::nullptr_t)
             {
                 ((Impl*)this)->_value = nullptr;
                 ((Impl*)this)->on_assign();

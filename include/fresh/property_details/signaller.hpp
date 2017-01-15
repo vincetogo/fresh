@@ -38,11 +38,7 @@ namespace fresh
                 return attributes::connect(_onChanged, fn, args...);
             }
         };
-        
-        class any_class
-        {
-        };
-        
+                
         template <class T,
             class Attributes,
             class F = void,

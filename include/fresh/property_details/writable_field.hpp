@@ -91,6 +91,7 @@ namespace fresh
                     writable_field<T, Attributes, SignalFriend>>;
             
             using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using value_type = typename property_traits<T, Attributes>::value_type;
             
             writable_field() :
                 base()
@@ -117,6 +118,8 @@ namespace fresh
         private:
             friend base;
             friend assignable_base;
+            friend assignable_add<value_type, assignable_base>;
+            friend assignable_subtract<value_type, assignable_base>;
             
             void
             on_assign()
@@ -143,12 +146,17 @@ namespace fresh
                     Attributes,
                     writable_field<T, Attributes, SignalFriend>>;
             
+            using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using value_type = typename property_traits<T, Attributes>::value_type;
+
             using base::base;
             using assignable_base::operator=;
             
         private:
             friend base;
             friend assignable_base;
+            friend assignable_add<value_type, assignable_base>;
+            friend assignable_subtract<value_type, assignable_base>;
             
             void
             on_assign()
