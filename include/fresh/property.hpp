@@ -231,10 +231,10 @@ namespace fresh
     protected:
         
         using base::operator=;
-        using base::operator+=;
+        /*using base::operator+=;
         using base::operator++;
         using base::operator-=;
-        using base::operator--;
+        using base::operator--;*/
         
         T& get_mutable()
         {

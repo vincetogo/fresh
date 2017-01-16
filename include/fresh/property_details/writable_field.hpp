@@ -51,7 +51,7 @@ namespace fresh
             }
             
             writable_field_base(const writable_field_base& other) :
-                _value(other())
+                _value(((const Impl&)other)())
             {
             }
             

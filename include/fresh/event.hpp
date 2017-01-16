@@ -43,6 +43,10 @@ namespace fresh
 
 class fresh::event_details::event_interface
 {
+public:
+    virtual ~event_interface() = default;
+
+private:
     friend connection;
     
     virtual void close(connection& cnxn) = 0;
@@ -98,13 +102,13 @@ private:
     {
     }
     
-    source& operator = (source&& other)
+    source& operator= (source&& other)
     {
         _fn = std::move(other._fn);
         return *this;
     }
     
-    std::unique_ptr<std::function<Fn>>  _fn;
+    std::shared_ptr<std::function<Fn>>  _fn;
 };
 
 class fresh::connection :
@@ -140,7 +144,7 @@ public:
         }
     }
     
-    bool operator < (const connection& rhs) const
+    bool operator< (const connection& rhs) const
     {
         std::lock_guard<std::mutex> lock1(_mutex);
         std::lock_guard<std::mutex> lock2(rhs._mutex);
@@ -208,22 +212,35 @@ protected:
     void
     do_call(Callable forEach, Args... args)
     {
-        auto old_can_clean = _can_clean;
+        std::vector<decltype(std::declval<source_type>()._fn)> fns;
         
-        _can_clean = false;
-        
-        for (auto& key_source : _sources)
         {
-            auto& source = key_source.second;
+            std::lock_guard<std::recursive_mutex> lock(_mutex);
             
-            ((Impl*)this)->make_call(forEach, *source._fn, args...);
+            for (auto& key_source : _sources)
+            {
+                auto& source = key_source.second;
+                
+                fns.push_back(source._fn);
+            }
+        }
+        
+        auto old_can_clean = _can_clean;
+        _can_clean = _clean_guard;
+        
+        for (auto& fn : fns)
+        {
+            ((Impl*)this)->make_call(forEach, *fn, args...);
         }
         
         _can_clean = old_can_clean;
+        
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         clean();
     }
     
     std::recursive_mutex    _mutex;
+    static const bool       _clean_guard = true;
     
 private:
     
@@ -242,7 +259,6 @@ private:
     void close(connection& cnxn) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
-
         
         _invalid_connections.insert(std::move(cnxn));
         
@@ -281,8 +297,6 @@ public:
     
     auto operator()(Args... args) -> std::vector<Result, Alloc<Result>>
     {
-        std::lock_guard<std::recursive_mutex> lock(base::_mutex);
-        
         std::vector<Result, Alloc<Result>> results;
         
         base::do_call(
@@ -321,8 +335,6 @@ public:
     
     void operator()(Args... args)
     {
-        std::lock_guard<std::recursive_mutex> lock(base::_mutex);
-        
         base::do_call(nullptr, args...);
     }
     
