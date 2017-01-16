@@ -44,6 +44,12 @@ namespace fresh
             {
             }
             
+            template<class V>
+            writable_field_base(V value) :
+                _value(value)
+            {
+            }
+            
             writable_field_base(const writable_field_base& other) :
                 _value(other())
             {

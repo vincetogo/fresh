@@ -18,6 +18,8 @@
 
 extern void event_test();
 
+using namespace std::literals;
+
 namespace
 {
     using namespace fresh;
@@ -67,8 +69,10 @@ namespace
             return f3() + f4();
         }
         
-        property<float, dynamic<A, observable>, &A::get_f5>   f5;
-        property<float, dynamic<A>, &A::get_f5>   f6;
+        property<float, dynamic<A, observable>, &A::get_f5> f5;
+        property<float, dynamic<A>, &A::get_f5>             f6;
+        
+        property<std::string>   str = "foo";
         
         void func()
         {
@@ -100,11 +104,13 @@ int main(int argc, const char * argv[])
     //a.f5 = 5.0f; // Error: f5 doesn't have a setter
     a.f4 = 5.0f;
     
-    /*a.f3.connect(
+    // This connection to f3 will be immediately disconnected since we don't
+    // assign the result to anything, so RAII immediately causes a disconnection
+    a.f3.connect(
         [&]()
         {
-            printf("f4 is now %f\n", a.f3());
-        });*/
+            printf("f3 is now %f\n", a.f3());
+        });
     
     auto cnxnF4 = a.f4.connect(
         [&]()
@@ -159,6 +165,10 @@ int main(int argc, const char * argv[])
     
     a.another_a = std::make_shared<A>();
     a.another_a = std::make_shared<A>();
+    
+    a.str += "bar"s;
+    
+    printf("str: %s\n", a.str().c_str());
     
     //B b;
     

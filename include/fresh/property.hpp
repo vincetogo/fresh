@@ -133,8 +133,7 @@ namespace fresh
     {
     public:
         
-        using base = property_details::
-        gettable<T, Owner, Attributes, Getter>;
+        using base = property_details::gettable<T, Owner, Attributes, Getter>;
         
         using base::base;
     };
@@ -164,7 +163,8 @@ namespace fresh
     {
     public:
         
-        property(T value) :
+        template<class V>
+        property(V value) :
             _value(value)
         {
         }
@@ -179,22 +179,23 @@ namespace fresh
         {
         }
         
-        const T& operator () () const
+        const T& operator() () const
         {
             return _value;
         }
         
-        bool operator == (T other) const
+        bool operator== (T other) const
         {
             return _value == other;
         }
         
-        bool operator != (T other) const
+        bool operator!= (T other) const
         {
             return !operator==(other);
         }
         
-        property& operator=(const T other) = delete;
+        template<class V>
+        property& operator=(V other) = delete;
         
     private:
         

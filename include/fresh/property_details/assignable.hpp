@@ -36,8 +36,15 @@ namespace fresh
             Impl&
             operator+= (arg_type rhs)
             {
-                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
-                return ((Assignable*)this)->operator=((*(Impl*)this)() + rhs);
+                {
+                    write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                    
+                    ((Impl*)this)->_value = ((Impl*)this)->_value + rhs;
+                }
+                
+                ((Impl*)this)->on_assign();
+                
+                return *(Impl*)this;
             }
             
             Impl&
@@ -106,8 +113,15 @@ namespace fresh
             Impl&
             operator-= (arg_type rhs)
             {
-                write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
-                return ((Assignable*)this)->operator=((*(Impl*)this)() - rhs);
+                {
+                    write_lock<typename Impl::mutex_type> lock(((Impl*)this)->_mutex);
+                    
+                    ((Impl*)this)->_value = ((Impl*)this)->_value - rhs;
+                }
+                
+                ((Impl*)this)->on_assign();
+                
+                return *(Impl*)this;
             }
             
             Impl&
@@ -184,14 +198,14 @@ namespace fresh
             Impl&
             operator= (arg_type rhs)
             {
-                ((Impl*)this)->assign(rhs);
+                assign(rhs);
                 return *(Impl*)this;
             }
             
             Impl&
             operator= (std::nullptr_t)
             {
-                ((Impl*)this)->assign(nullptr);
+                assign(nullptr);
                 return *(Impl*)this;
             }
             

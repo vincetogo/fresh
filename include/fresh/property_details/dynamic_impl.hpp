@@ -45,7 +45,7 @@ namespace fresh
         };
         
         
-        template <class Attributes>
+        template <class Attributes, class Impl, bool = has_event<Attributes>::value>
         class dependent_property
         {
         protected:
@@ -65,7 +65,7 @@ namespace fresh
                 auto cnxn = first.connect(
                     [=]()
                     {
-                        this->send();
+                        ((Impl*)this)->send();
                     });
                 
                 _propertyConnections.push_back(std::move(cnxn));
@@ -82,25 +82,28 @@ namespace fresh
                 _propertyConnections;
         };
         
-        template <>
-        class dependent_property<null_signal>
+        template <class Attributes, class Impl>
+        class dependent_property<Attributes, Impl, false>
         {
         };
         
         
-        
         template <class T, class D, class Attributes,
             typename getter<T, D>::type Getter>
-        class gettable : public signaller<T, Attributes>,
-            public dependent_property<Attributes>
+        class gettable :
+            public signaller<T, Attributes>,
+            public dependent_property<Attributes, gettable<T, D, Attributes, Getter>>
         {
         public:
             
             using arg_type = typename property_traits<T, Attributes>::arg_type;
+            using dependent_property_base =
+                dependent_property<Attributes, gettable<T, D, Attributes, Getter>>;
             using result_type = typename property_traits<T, Attributes>::result_type;
             
             template<class... Properties>
             gettable(D* host, Properties&... properties) :
+                dependent_property_base(properties...),
                 _host(host)
             {
             }
