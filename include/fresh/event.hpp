@@ -29,10 +29,16 @@ namespace fresh
 
         class event_interface;
 
-        class source_base;
-        
         template<class Fn>
         class source;
+
+        class source_base;
+
+        template<class Fn>
+        class source_function_base;
+        
+        template<class Fn>
+        class source_function;
     }
     
     class connection;
@@ -67,6 +73,77 @@ private:
     }
 };
 
+template<class Fn>
+class fresh::event_details::source_function_base
+{
+public:
+    
+    source_function_base(const std::function<Fn>& fn) :
+    _fn(fn)
+    {
+    }
+    
+    void clear()
+    {
+        fresh::write_lock<fresh::shared_mutex>   lock(_mutex);
+        _fn = nullptr;
+    }
+
+protected:
+    
+    std::function<Fn>           _fn;
+    mutable fresh::shared_mutex _mutex;
+};
+
+
+template<class Result, class... Args>
+class fresh::event_details::source_function<Result(Args...)> :
+    public source_function_base<Result(Args...)>
+{
+public:
+    
+    using base = source_function_base<Result(Args...)>;
+    
+    using base::base;
+    
+    Result
+    operator() (Args... args) const
+    {
+        fresh::read_lock<fresh::shared_mutex>   lock(base::_mutex);
+        
+        if (base::_fn)
+        {
+            return base::_fn(args...);
+        }
+        else
+        {
+            return Result();
+        }
+    }
+};
+
+template<class... Args>
+class fresh::event_details::source_function<void(Args...)> :
+    public source_function_base<void(Args...)>
+{
+public:
+    
+    using base = source_function_base<void(Args...)>;
+    
+    using base::base;
+
+    void
+    operator() (Args... args) const
+    {
+        fresh::read_lock<fresh::shared_mutex>   lock(base::_mutex);
+        
+        if (base::_fn)
+        {
+            base::_fn(args...);
+        }
+    }
+};
+
 class fresh::event_details::source_base
 {
 protected:
@@ -98,7 +175,7 @@ private:
     friend class fresh::connection;
     
     source(std::function<Fn> fn) :
-        _fn(std::make_unique<std::function<Fn>>(fn))
+        _fn(std::make_shared<source_function<Fn>>(fn))
     {
     }
     
@@ -108,7 +185,7 @@ private:
         return *this;
     }
     
-    std::shared_ptr<std::function<Fn>>  _fn;
+    std::shared_ptr<source_function<Fn>>  _fn;
 };
 
 class fresh::connection :
@@ -212,7 +289,7 @@ protected:
     void
     do_call(Callable forEach, Args... args)
     {
-        std::vector<decltype(std::declval<source_type>()._fn)> fns;
+        std::vector<decltype(source_type::_fn)> fns;
         
         {
             std::lock_guard<std::recursive_mutex> lock(_mutex);
@@ -260,7 +337,13 @@ private:
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         
-        _invalid_connections.insert(std::move(cnxn));
+        auto pos = _sources.find(cnxn._fn);
+        
+        if (pos != _sources.end())
+        {
+            pos->second._fn->clear();
+            _invalid_connections.insert(std::move(cnxn));
+        }
         
         clean();
     }
@@ -313,7 +396,7 @@ private:
     friend base;
     
     void make_call(const std::function<void(const Result&)>& forEach,
-                   const std::function<Result(Args...)>& fn,
+                   const event_details::source_function<Result(Args...)>& fn,
                    Args... args)
     {
         forEach(fn(args...));
@@ -343,7 +426,7 @@ private:
     friend base;
     
     void make_call(std::nullptr_t,
-                   const std::function<void(Args...)>& fn,
+                   const event_details::source_function<void(Args...)>& fn,
                    Args... args)
     {
         fn(args...);
