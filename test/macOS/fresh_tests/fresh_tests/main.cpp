@@ -166,7 +166,7 @@ int main(int argc, const char * argv[])
     a.another_a = std::make_shared<A>();
     a.another_a = std::make_shared<A>();
     
-    a.str += "bar"s;
+    a.str += "bar";
     
     printf("str: %s\n", a.str().c_str());
     
