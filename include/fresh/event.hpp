@@ -30,7 +30,92 @@ namespace fresh
         bool ThreadSafe,
         template <class T> class Alloc>
     class event_base;
+    
+    template <class Impl,
+        class ImplBase,
+        class FnType,
+        bool ThreadSafe,
+        template <class T> class Alloc>
+    class event_caller;
+
 }
+
+template <class Impl,
+    class ImplBase,
+    template <class T> class Alloc,
+    class ReturnType,
+    class... Args>
+class fresh::event_caller<Impl, ImplBase, ReturnType(Args...), false, Alloc> :
+    public event_interface<false>
+{
+    friend Impl;
+    
+    template<class CallHandler>
+    void
+    call(CallHandler forEach, Args... args)
+    {
+        auto old_can_clean = ((ImplBase*)this)->_can_clean;
+        ((ImplBase*)this)->_can_clean = ((ImplBase*)this)->_clean_guard;
+        
+        for (auto& cnxn_source : ((Impl*)this)->_sources)
+        {
+            ((Impl*)this)->call_function(forEach, *cnxn_source.second._fn, args...);
+        }
+        
+        ((ImplBase*)this)->_can_clean = old_can_clean;
+        
+        ((ImplBase*)this)->clean();
+    }
+};
+
+template <class Impl,
+    class ImplBase,
+    template <class T> class Alloc,
+    class ReturnType,
+    class... Args>
+class fresh::event_caller<Impl, ImplBase, ReturnType(Args...), true, Alloc> :
+    public event_interface<true>
+{
+    friend Impl;
+    
+    using mutex_type =
+        typename event_details::event_traits<true>::event_mutex_type;
+    using lock_type = std::lock_guard<mutex_type>;
+    using source_type = event_details::source<ReturnType(Args...), true>;
+    using function_type = decltype(source_type::_fn);
+    
+    template<class CallHandler>
+    void
+    call(CallHandler forEach, Args... args)
+    {
+        std::vector<function_type, Alloc<function_type>> fns;
+        
+        {
+            lock_type lock(((ImplBase*)this)->_mutex);
+            
+            for (auto& key_source : ((ImplBase*)this)->_sources)
+            {
+                auto& source = key_source.second;
+                
+                fns.push_back(source._fn);
+            }
+        }
+        
+        auto old_can_clean = ((ImplBase*)this)->_can_clean;
+        ((ImplBase*)this)->_can_clean = ((ImplBase*)this)->_clean_guard;
+        
+        for (auto& fn : fns)
+        {
+            ((Impl*)this)->call_function(forEach, *fn, args...);
+        }
+        
+        ((ImplBase*)this)->_can_clean = old_can_clean;
+        
+        lock_type lock(((ImplBase*)this)->_mutex);
+        ((ImplBase*)this)->clean();
+    }
+};
+
 
 template <class Impl,
     bool ThreadSafe,
@@ -38,7 +123,10 @@ template <class Impl,
     class Result,
     class... Args>
 class fresh::event_base<Impl, Result(Args...), ThreadSafe, Alloc> :
-    public event_interface<ThreadSafe>
+    public event_caller<Impl,
+        event_base<Impl, Result(Args...), ThreadSafe, Alloc>,
+        Result(Args...),
+        ThreadSafe, Alloc>
 {
 public:
     
@@ -47,6 +135,7 @@ public:
         typename event_details::event_traits<ThreadSafe>::event_mutex_type;
     using lock_type = std::lock_guard<mutex_type>;
     using source_type = event_details::source<Result(Args...), ThreadSafe>;
+    using function_type = decltype(source_type::_fn);
     
     connection_type connect(const std::function<Result(Args...)>& fn)
     {
@@ -64,36 +153,10 @@ public:
     
 protected:
     
-    template<class Callable>
-    void
-    call(Callable forEach, Args... args)
-    {
-        std::vector<decltype(source_type::_fn)> fns;
-        
-        {
-            lock_type lock(_mutex);
-            
-            for (auto& key_source : _sources)
-            {
-                auto& source = key_source.second;
-                
-                fns.push_back(source._fn);
-            }
-        }
-        
-        auto old_can_clean = _can_clean;
-        _can_clean = _clean_guard;
-        
-        for (auto& fn : fns)
-        {
-            ((Impl*)this)->call_function(forEach, *fn, args...);
-        }
-        
-        _can_clean = old_can_clean;
-        
-        lock_type lock(_mutex);
-        clean();
-    }
+    friend event_caller<Impl,
+        event_base<Impl, Result(Args...), ThreadSafe, Alloc>,
+        Result(Args...),
+        ThreadSafe, Alloc>;
     
     mutex_type          _mutex;
     static const bool   _clean_guard = true;
@@ -150,7 +213,10 @@ class fresh::event<Result(Args...), ThreadSafe, Alloc> :
         <event<Result(Args...), ThreadSafe, Alloc>, Result(Args...), ThreadSafe, Alloc>
 {
 public:
-    
+    static_assert(!ThreadSafe ||
+                  is_thread_safe_function_type<Result(Args...)>::value,
+                  "Thread-safe events require a function type that passes and returns by copy.");
+
     using base =
         event_base
             <event<Result(Args...), ThreadSafe, Alloc>, Result(Args...), ThreadSafe, Alloc>;
@@ -173,7 +239,13 @@ public:
 private:
     
     friend base;
-    
+    template <class Impl,
+        class ImplBase,
+        class FnType,
+        bool ThreadSafeCaller,
+        template <class T> class AllocCaller>
+    friend class event_caller;
+
     void call_function(const std::function<void(const Result&)>& forEach,
                    const event_details::event_function<Result(Args...), ThreadSafe>& fn,
                    Args... args)
@@ -187,6 +259,10 @@ class fresh::event<void(Args...), ThreadSafe, Alloc> :
     public event_base
         <event<void(Args...), ThreadSafe, Alloc>, void(Args...), ThreadSafe, Alloc>
 {
+    static_assert(!ThreadSafe ||
+        is_thread_safe_function_type<void(Args...)>::value,
+        "Thread-safe events require a function type that passes and returns by copy.");
+    
 public:
     
     using base =
@@ -203,6 +279,13 @@ public:
 private:
     
     friend base;
+    
+    template <class Impl,
+        class ImplBase,
+        class FnType,
+        bool ThreadSafeCaller,
+        template <class T> class AllocCaller>
+    friend class event_caller;
     
     void call_function(std::nullptr_t,
                    const event_details::event_function<void(Args...), ThreadSafe>& fn,

@@ -25,6 +25,9 @@ namespace fresh
         class source_base;
     }
     
+    template <class Impl, class ImplBase, class FnType, bool ThreadSafeEvent, template <class S> class Alloc>
+    class event_caller;
+
     template <class Impl, class FnType, bool ThreadSafe, template <class T> class Alloc>
     class event_base;
 }
@@ -47,6 +50,9 @@ public:
     }
     
 private:
+    template <class Impl, class ImplBase, class Fn2, bool ThreadSafeEvent, template <class S> class Alloc>
+    friend class fresh::event_caller;
+
     template <class Impl, class Fn2, bool ThreadSafeEvent, template <class S> class Alloc>
     friend class fresh::event_base;
     
