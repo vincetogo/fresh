@@ -18,15 +18,15 @@ namespace fresh
 {
     namespace event_details
     {
-        template<class Fn>
+        template<class Fn, bool ThreadSafe>
         class event_function_base;
         
-        template<class Fn>
+        template<class Fn, bool ThreadSafe>
         class event_function;
     }
 }
 
-template<class Fn>
+template<class Fn, bool ThreadSafe>
 class fresh::event_details::event_function_base
 {
 public:
@@ -49,13 +49,13 @@ protected:
 };
 
 
-template<class Result, class... Args>
-class fresh::event_details::event_function<Result(Args...)> :
-    public event_function_base<Result(Args...)>
+template<bool ThreadSafe, class Result, class... Args>
+class fresh::event_details::event_function<Result(Args...), ThreadSafe> :
+    public event_function_base<Result(Args...), ThreadSafe>
 {
 public:
     
-    using base = event_function_base<Result(Args...)>;
+    using base = event_function_base<Result(Args...), ThreadSafe>;
     
     using base::base;
     
@@ -75,13 +75,13 @@ public:
     }
 };
 
-template<class... Args>
-class fresh::event_details::event_function<void(Args...)> :
-    public event_function_base<void(Args...)>
+template<bool ThreadSafe, class... Args>
+class fresh::event_details::event_function<void(Args...), ThreadSafe> :
+    public event_function_base<void(Args...), ThreadSafe>
 {
 public:
     
-    using base = event_function_base<void(Args...)>;
+    using base = event_function_base<void(Args...), ThreadSafe>;
     
     using base::base;
 

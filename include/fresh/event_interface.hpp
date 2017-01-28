@@ -10,19 +10,23 @@
 
 namespace fresh
 {
+    template <bool ThreadSafe>
     class connection;
+    
+    template <bool ThreadSafe>
     class event_interface;
 }
 
+template <bool ThreadSafe>
 class fresh::event_interface
 {
 public:
     virtual ~event_interface() = default;
 
 private:
-    friend connection;
+    friend connection<ThreadSafe>;
     
-    virtual void close(connection& cnxn) = 0;
+    virtual void close(connection<ThreadSafe>& cnxn) = 0;
 };
 
 #endif

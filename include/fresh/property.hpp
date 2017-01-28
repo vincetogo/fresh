@@ -43,9 +43,9 @@ namespace fresh
     
     template <bool ThreadSafe>
     struct basic_observable :
-        public property_attributes<event<void()>, connection, ThreadSafe>
+        public property_attributes<event<void(), ThreadSafe>, connection<ThreadSafe>, ThreadSafe>
     {
-        using base = property_attributes<event<void()>, connection, ThreadSafe>;
+        using base = property_attributes<event<void(), ThreadSafe>, connection<ThreadSafe>, ThreadSafe>;
         
         using connection_type = typename base::connection_type;
         using event_type = typename base::event_type;

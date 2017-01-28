@@ -20,22 +20,31 @@
 
 namespace fresh
 {
-    template <class FnType, template <class T> class Alloc = std::allocator>
+    template <class FnType, bool ThreadSafe = false,
+        template <class T> class Alloc = std::allocator>
     class event;
     
-    template <class Impl, class FnType, template <class T> class Alloc>
+    template <class Impl,
+        class FnType,
+        bool ThreadSafe,
+        template <class T> class Alloc>
     class event_base;
 }
 
-template <class Impl, template <class S> class Alloc, class Result, class... Args>
-class fresh::event_base<Impl, Result(Args...), Alloc> :
-    public event_interface
+template <class Impl,
+    bool ThreadSafe,
+    template <class S> class Alloc,
+    class Result,
+    class... Args>
+class fresh::event_base<Impl, Result(Args...), ThreadSafe, Alloc> :
+    public event_interface<ThreadSafe>
 {
 public:
     
-    using source_type = event_details::source<Result(Args...)>;
+    using connection_type = connection<ThreadSafe>;
+    using source_type = event_details::source<Result(Args...), ThreadSafe>;
     
-    connection connect(const std::function<Result(Args...)>& fn)
+    connection_type connect(const std::function<Result(Args...)>& fn)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         
@@ -46,14 +55,14 @@ public:
         
         value = std::move(source);
         
-        return connection(key, this, &value);
+        return connection_type(key, this, &value);
     }
     
 protected:
     
     template<class Callable>
     void
-    do_call(Callable forEach, Args... args)
+    call(Callable forEach, Args... args)
     {
         std::vector<decltype(source_type::_fn)> fns;
         
@@ -73,7 +82,7 @@ protected:
         
         for (auto& fn : fns)
         {
-            ((Impl*)this)->make_call(forEach, *fn, args...);
+            ((Impl*)this)->call_function(forEach, *fn, args...);
         }
         
         _can_clean = old_can_clean;
@@ -99,7 +108,7 @@ private:
         _invalid_connections.clear();
     }
     
-    void close(connection& cnxn) override
+    void close(connection_type& cnxn) override
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         
@@ -116,7 +125,7 @@ private:
     
     using connection_set_type =
         std::set
-            <connection, std::less<connection>, Alloc<connection>>;
+            <connection_type, std::less<connection_type>, Alloc<connection_type>>;
     
     using source_map_alloc_type = Alloc<std::pair<void* const, source_type>>;
 
@@ -131,16 +140,16 @@ private:
     source_map_type         _sources;
 };
 
-template<template <class T> class Alloc, class Result, class... Args>
-class fresh::event<Result(Args...), Alloc> :
+template<bool ThreadSafe, template <class T> class Alloc, class Result, class... Args>
+class fresh::event<Result(Args...), ThreadSafe, Alloc> :
     public event_base
-        <event<Result(Args...), Alloc>, Result(Args...), Alloc>
+        <event<Result(Args...), ThreadSafe, Alloc>, Result(Args...), ThreadSafe, Alloc>
 {
 public:
     
     using base =
         event_base
-            <event<Result(Args...), Alloc>, Result(Args...), Alloc>;
+            <event<Result(Args...), ThreadSafe, Alloc>, Result(Args...), ThreadSafe, Alloc>;
     
     using base::base;
     
@@ -148,7 +157,7 @@ public:
     {
         std::vector<Result, Alloc<Result>> results;
         
-        base::do_call(
+        base::call(
             [&](const Result& result)
             {
                 results.push_back(result);
@@ -161,38 +170,38 @@ private:
     
     friend base;
     
-    void make_call(const std::function<void(const Result&)>& forEach,
-                   const event_details::event_function<Result(Args...)>& fn,
+    void call_function(const std::function<void(const Result&)>& forEach,
+                   const event_details::event_function<Result(Args...), ThreadSafe>& fn,
                    Args... args)
     {
         forEach(fn(args...));
     }
 };
 
-template<template <class T> class Alloc, class... Args>
-class fresh::event<void(Args...), Alloc> :
+template<bool ThreadSafe, template <class T> class Alloc, class... Args>
+class fresh::event<void(Args...), ThreadSafe, Alloc> :
     public event_base
-        <event<void(Args...), Alloc>, void(Args...), Alloc>
+        <event<void(Args...), ThreadSafe, Alloc>, void(Args...), ThreadSafe, Alloc>
 {
 public:
     
     using base =
         event_base
-            <event<void(Args...), Alloc>, void(Args...), Alloc>;
+            <event<void(Args...), ThreadSafe, Alloc>, void(Args...), ThreadSafe, Alloc>;
     
     using base::base;
     
     void operator()(Args... args)
     {
-        base::do_call(nullptr, args...);
+        base::call(nullptr, args...);
     }
     
 private:
     
     friend base;
     
-    void make_call(std::nullptr_t,
-                   const event_details::event_function<void(Args...)>& fn,
+    void call_function(std::nullptr_t,
+                   const event_details::event_function<void(Args...), ThreadSafe>& fn,
                    Args... args)
     {
         fn(args...);

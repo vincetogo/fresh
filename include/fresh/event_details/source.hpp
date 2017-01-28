@@ -18,15 +18,19 @@ namespace fresh
         template<class Impl>
         class connection_base;
      
-        template<class Fn>
+        template<class Fn, bool ThreadSafe>
         class source;
 
+        template<bool ThreadSafe>
         class source_base;
     }
+    
+    template <class Impl, class FnType, bool ThreadSafe, template <class T> class Alloc>
+    class event_base;
 }
 
-template <class Fn>
-class fresh::event_details::source : public source_base
+template <class Fn, bool ThreadSafe>
+class fresh::event_details::source : public source_base<ThreadSafe>
 {
 public:
     
@@ -36,19 +40,21 @@ public:
     
     ~source()
     {
-        if (source_base::_connection)
+        if (source_base<ThreadSafe>::_connection)
         {
-            source_base::_connection->clear();
+            source_base<ThreadSafe>::_connection->clear();
         }
     }
     
 private:
-    template <class Impl, class Fn2, template <class S> class Alloc>
+    template <class Impl, class Fn2, bool ThreadSafeEvent, template <class S> class Alloc>
     friend class fresh::event_base;
+    
+    template <bool ThreadSafeCnxn>
     friend class fresh::connection;
     
     source(std::function<Fn> fn) :
-        _fn(std::make_shared<event_function<Fn>>(fn))
+        _fn(std::make_shared<event_function<Fn, ThreadSafe>>(fn))
     {
     }
     
@@ -58,7 +64,7 @@ private:
         return *this;
     }
     
-    std::shared_ptr<event_function<Fn>>  _fn;
+    std::shared_ptr<event_function<Fn, ThreadSafe>> _fn;
 };
 
 #endif

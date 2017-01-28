@@ -15,19 +15,21 @@ namespace fresh
         template<class Impl>
         class connection_base;
      
+        template<bool ThreadSafe>
         class source_base;
     }
     
+    template <bool ThreadSafe>
     class connection;
 }
 
-
+template<bool ThreadSafe>
 class fresh::event_details::source_base
 {
 protected:
-    friend connection;
+    friend connection<ThreadSafe>;
     
-    connection_base<connection>* _connection = nullptr;
+    connection_base<connection<ThreadSafe>>* _connection = nullptr;
 };
 
 #endif

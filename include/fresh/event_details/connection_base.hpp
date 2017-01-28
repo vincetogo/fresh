@@ -15,7 +15,7 @@ namespace fresh
         template<class Impl>
         class connection_base;
         
-        template <class Fn>
+        template <class Fn, bool ThreadSafe>
         class source;
     }
 }
@@ -23,7 +23,7 @@ namespace fresh
 template <class Impl>
 class fresh::event_details::connection_base
 {
-    template <class Fn>
+    template <class Fn, bool ThreadSafe>
     friend class fresh::event_details::source;
     
     

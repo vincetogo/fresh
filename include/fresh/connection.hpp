@@ -17,14 +17,16 @@
 
 namespace fresh
 {
+    template <bool ThreadSafe = false>
     class connection;
     
-    template <class Impl, class FnType, template <class T> class Alloc>
+    template <class Impl, class FnType, bool ThreadSafe, template <class T> class Alloc>
     class event_base;
 }
 
+template <bool ThreadSafe>
 class fresh::connection :
-    public event_details::connection_base<connection>
+    public event_details::connection_base<connection<ThreadSafe>>
 {
 public:
     
@@ -65,14 +67,14 @@ public:
     }
     
 private:
-    template <class Impl, class FnType, template <class T> class Alloc>
+    template <class Impl, class FnType, bool ThreadSafeBase, template <class T> class Alloc>
     friend class fresh::event_base;
     
-    friend class connection_base<connection>;
+    friend class event_details::connection_base<connection<ThreadSafe>>;
     
     template<class Fn>
-    connection(void* fn, event_interface* e,
-               event_details::source<Fn>* src) :
+    connection(void* fn, event_interface<ThreadSafe>* e,
+               event_details::source<Fn, ThreadSafe>* src) :
     _event(e),
     _fn(fn),
     _source(src)
@@ -90,10 +92,10 @@ private:
         _fn = nullptr;
     }
     
-    event_interface*            _event;
-    void*                       _fn;
-    event_details::source_base* _source;
-    mutable std::mutex          _mutex;
+    event_interface<ThreadSafe>*            _event;
+    void*                                   _fn;
+    event_details::source_base<ThreadSafe>* _source;
+    mutable std::mutex                      _mutex;
 };
 
 #endif
