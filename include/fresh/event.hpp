@@ -10,6 +10,7 @@
 
 #include "connection.hpp"
 #include "event_details/source.hpp"
+#include "event_details/traits.hpp"
 #include "threads.hpp"
 
 #include <functional>
@@ -42,11 +43,14 @@ class fresh::event_base<Impl, Result(Args...), ThreadSafe, Alloc> :
 public:
     
     using connection_type = connection<ThreadSafe>;
+    using mutex_type =
+        typename event_details::event_traits<ThreadSafe>::event_mutex_type;
+    using lock_type = std::lock_guard<mutex_type>;
     using source_type = event_details::source<Result(Args...), ThreadSafe>;
     
     connection_type connect(const std::function<Result(Args...)>& fn)
     {
-        std::lock_guard<std::recursive_mutex> lock(_mutex);
+        lock_type lock(_mutex);
         
         source_type source(fn);
         void* key = source._fn.get();
@@ -67,7 +71,7 @@ protected:
         std::vector<decltype(source_type::_fn)> fns;
         
         {
-            std::lock_guard<std::recursive_mutex> lock(_mutex);
+            lock_type lock(_mutex);
             
             for (auto& key_source : _sources)
             {
@@ -87,12 +91,12 @@ protected:
         
         _can_clean = old_can_clean;
         
-        std::lock_guard<std::recursive_mutex> lock(_mutex);
+        lock_type lock(_mutex);
         clean();
     }
     
-    std::recursive_mutex    _mutex;
-    static const bool       _clean_guard = true;
+    mutex_type          _mutex;
+    static const bool   _clean_guard = true;
     
 private:
     
@@ -110,7 +114,7 @@ private:
     
     void close(connection_type& cnxn) override
     {
-        std::lock_guard<std::recursive_mutex> lock(_mutex);
+        lock_type lock(_mutex);
         
         auto pos = _sources.find(cnxn._fn);
         

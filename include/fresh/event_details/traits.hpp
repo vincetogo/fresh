@@ -18,13 +18,17 @@ namespace fresh
         template <bool ThreadSafe = false>
         struct event_traits
         {
-            using mutex_type = std::recursive_mutex;
+            using connection_mutex_type = std::mutex;
+            using event_mutex_type      = std::recursive_mutex;
+            using function_mutex_type   = fresh::shared_mutex;
         };
         
         template <>
         struct event_traits<false>
         {
-            using mutex_type = std::null_mutex;
+            using connection_mutex_type = fresh::null_mutex;
+            using event_mutex_type      = fresh::null_mutex;
+            using function_mutex_type   = fresh::null_mutex;
         };
     }
 }

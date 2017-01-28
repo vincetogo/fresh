@@ -10,6 +10,7 @@
 
 #include "event_details/connection_base.hpp"
 #include "event_details/source_base.hpp"
+#include "event_details/traits.hpp"
 #include "event_interface.hpp"
 #include "threads.hpp"
 
@@ -30,10 +31,15 @@ class fresh::connection :
 {
 public:
     
+    using mutex_type =
+        typename event_details::event_traits<ThreadSafe>::connection_mutex_type;
+    using lock_type = std::lock_guard<mutex_type>;
+
+    
     connection(connection&& other)
     {
-        std::lock_guard<std::mutex> lock1(_mutex);
-        std::lock_guard<std::mutex> lock2(other._mutex);
+        lock_type lock1(_mutex);
+        lock_type lock2(other._mutex);
         
         _event = other._event;
         _fn = other._fn;
@@ -60,8 +66,8 @@ public:
     
     bool operator< (const connection& rhs) const
     {
-        std::lock_guard<std::mutex> lock1(_mutex);
-        std::lock_guard<std::mutex> lock2(rhs._mutex);
+        lock_type lock1(_mutex);
+        lock_type lock2(rhs._mutex);
         
         return _fn < rhs._fn;
     }
@@ -86,7 +92,7 @@ private:
     
     void clear()
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        lock_type lock(_mutex);
         
         _event = nullptr;
         _fn = nullptr;
@@ -95,7 +101,7 @@ private:
     event_interface<ThreadSafe>*            _event;
     void*                                   _fn;
     event_details::source_base<ThreadSafe>* _source;
-    mutable std::mutex                      _mutex;
+    mutable mutex_type                      _mutex;
 };
 
 #endif
