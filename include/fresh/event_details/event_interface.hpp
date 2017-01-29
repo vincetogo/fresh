@@ -5,20 +5,23 @@
 //  Copyright © 2017 Vincent Tourangeau. All rights reserved.
 //
 
-#ifndef fresh_event_interface_hpp
-#define fresh_event_interface_hpp
+#ifndef fresh_event_details_event_interface_hpp
+#define fresh_event_details_event_interface_hpp
 
 namespace fresh
 {
-    template <bool ThreadSafe>
-    class connection;
+    namespace event_details
+    {
+        template <bool ThreadSafe>
+        class event_interface;
+    }
     
     template <bool ThreadSafe>
-    class event_interface;
+    class connection;
 }
 
 template <bool ThreadSafe>
-class fresh::event_interface
+class fresh::event_details::event_interface
 {
 public:
     virtual ~event_interface() = default;

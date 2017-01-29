@@ -11,7 +11,7 @@
 #include "event_details/connection_base.hpp"
 #include "event_details/source_base.hpp"
 #include "event_details/traits.hpp"
-#include "event_interface.hpp"
+#include "event_details/event_interface.hpp"
 #include "threads.hpp"
 
 #include <cassert>
@@ -79,7 +79,7 @@ private:
     friend class event_details::connection_base<connection<ThreadSafe>>;
     
     template<class Fn>
-    connection(void* fn, event_interface<ThreadSafe>* e,
+    connection(void* fn, event_details::event_interface<ThreadSafe>* e,
                event_details::source<Fn, ThreadSafe>* src) :
     _event(e),
     _fn(fn),
@@ -98,10 +98,10 @@ private:
         _fn = nullptr;
     }
     
-    event_interface<ThreadSafe>*            _event;
-    void*                                   _fn;
-    event_details::source_base<ThreadSafe>* _source;
-    mutable mutex_type                      _mutex;
+    event_details::event_interface<ThreadSafe>* _event;
+    void*                                       _fn;
+    event_details::source_base<ThreadSafe>*     _source;
+    mutable mutex_type                          _mutex;
 };
 
 #endif

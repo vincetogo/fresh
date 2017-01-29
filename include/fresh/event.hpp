@@ -46,7 +46,7 @@ template <class Impl,
     class ReturnType,
     class... Args>
 class fresh::event_caller<Impl, ImplBase, ReturnType(Args...), false, Alloc> :
-    public event_interface<false>
+    public event_details::event_interface<false>
 {
     friend Impl;
     
@@ -74,7 +74,7 @@ template <class Impl,
     class ReturnType,
     class... Args>
 class fresh::event_caller<Impl, ImplBase, ReturnType(Args...), true, Alloc> :
-    public event_interface<true>
+    public event_details::event_interface<true>
 {
     friend Impl;
     
