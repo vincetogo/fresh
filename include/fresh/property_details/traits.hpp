@@ -10,6 +10,7 @@
 #define fresh_property_details_traits_hpp
 
 #include "../threads.hpp"
+#include "../type_policy.hpp"
 
 namespace fresh
 {
@@ -57,12 +58,28 @@ namespace fresh
             using value_type = std::atomic<T>;
         };
         
+        template <class T, type_policy Policy>
+        struct type_policy_traits;
+
+        template <class T>
+        struct type_policy_traits<T, copy>
+        {
+            using type = T;
+        };
+        
+        template <class T>
+        struct type_policy_traits<T, reference>
+        {
+            using type = const T&;
+        };
+
         template <class T, class Attributes, bool = Attributes::thread_safe>
         struct property_traits
         {
             using arg_type      = T;
             using mutex_type    = typename readable_traits<T, Attributes>::mutex_type;
-            using result_type   = T;
+            using result_type   = typename
+                type_policy_traits<T, Attributes::return_type_policy>::type;
             using value_type    = typename readable_traits<T, Attributes>::value_type;
         };
         
@@ -71,40 +88,9 @@ namespace fresh
         {
             using arg_type      = const T&;
             using mutex_type    = typename readable_traits<T, Attributes>::mutex_type;
-            using result_type   = T;
+            using result_type   = typename
+                type_policy_traits<T, Attributes::return_type_policy>::type;
             using value_type    = typename readable_traits<T, Attributes>::value_type;
-        };
-        
-        template <class T, class Attributes>
-        struct property_traits<T&, Attributes, false>
-        {
-            using arg_type      = const T&;
-            using mutex_type    = typename readable_traits<T, Attributes>::mutex_type;
-            using result_type   = const T&;
-            using value_type    = typename readable_traits<T, Attributes>::value_type;
-        };
-        
-        template <class T, class Attributes>
-        struct property_traits<const T&, Attributes, false>
-        {
-            using arg_type      = const T&;
-            using mutex_type    = typename readable_traits<T, Attributes>::mutex_type;
-            using result_type   = const T&;
-            using value_type    = typename readable_traits<T, Attributes>::value_type;
-        };
-        
-        template <class T, class Attributes>
-        struct property_traits<T&, Attributes, true>
-        {
-            static_assert(!Attributes::thread_safe,
-                          "Thread-safe properties cannot return by reference.");
-        };
-        
-        template <class T, class Attributes>
-        struct property_traits<const T&, Attributes, true>
-        {
-            static_assert(!Attributes::thread_safe,
-                          "Thread-safe properties cannot return by reference.");
         };
         
         struct does_not_exist {};

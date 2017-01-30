@@ -86,6 +86,7 @@
 			children = (
 				6176F0FF1E3D48B700FAB6CE /* connection_base.hpp */,
 				6176F1001E3D48B700FAB6CE /* event_function.hpp */,
+				6176F1051E3D48C500FAB6CE /* event_interface.hpp */,
 				6176F1011E3D48B700FAB6CE /* source.hpp */,
 				6176F1021E3D48B700FAB6CE /* source_base.hpp */,
 				6176F1031E3D48B700FAB6CE /* traits.hpp */,
@@ -107,7 +108,6 @@
 			children = (
 				6176F1041E3D48C500FAB6CE /* connection.hpp */,
 				6176F0FE1E3D48B700FAB6CE /* event_details */,
-				6176F1051E3D48C500FAB6CE /* event_interface.hpp */,
 				61DE7AEF1E1C79B200526942 /* event.hpp */,
 				61DE7AF11E1C79B200526942 /* property_details */,
 				61DE7AF01E1C79B200526942 /* property.hpp */,

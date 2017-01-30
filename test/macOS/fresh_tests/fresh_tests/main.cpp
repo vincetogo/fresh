@@ -60,7 +60,7 @@ namespace
             f3.send();
         }
         
-        property<float&, dynamic<A, observable>, &A::get_f3, &A::set_f3> f3;
+        property<float, dynamic<A, ref_observable>, &A::get_f3, &A::set_f3> f3;
         property<float, writable<observable>>   f4 = 3.0f;
         
         float

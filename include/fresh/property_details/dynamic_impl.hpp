@@ -20,30 +20,22 @@ namespace fresh
     
     namespace property_details
     {
-        template <typename T, typename D>
+        template <typename T, typename D, class Attributes>
         struct getter
         {
-            using type = T (D::*)() const;
+            using result_type =
+                typename property_traits<T, Attributes>::result_type;
+            using type = result_type (D::*)() const;
         };
         
-        template <typename T, typename D>
-        struct getter<T&, D>
-        {
-            using type = const T& (D::*)() const;
-        };
-        
-        template <typename T, typename D>
+        template <typename T, typename D, class Attributes>
         struct setter
         {
-            using type = void (D::*)(const T&);
+            using arg_type =
+                typename property_traits<T, Attributes>::arg_type;
+            
+            using type = void (D::*)(arg_type);
         };
-        
-        template <typename T, typename D>
-        struct setter<T&, D>
-        {
-            using type = void (D::*)(const T&);
-        };
-        
         
         template <class Attributes, class Impl, bool = has_event<Attributes>::value>
         class dependent_property
@@ -89,7 +81,7 @@ namespace fresh
         
         
         template <class T, class D, class Attributes,
-            typename getter<T, D>::type Getter>
+            typename getter<T, D, Attributes>::type Getter>
         class gettable :
             public signaller<T, Attributes>,
             public dependent_property<Attributes, gettable<T, D, Attributes, Getter>>
@@ -136,8 +128,8 @@ namespace fresh
         };
         
         template <class T, class D, class Attributes,
-            typename getter<T, D>::type Getter,
-            typename setter<T, D>::type Setter>
+            typename getter<T, D, Attributes>::type Getter,
+            typename setter<T, D, Attributes>::type Setter>
         class settable : public gettable<T, D, Attributes, Getter>
         {
         public:
@@ -216,11 +208,11 @@ namespace fresh
         template <class T,
             class D,
             class Attributes,
-            typename getter<T, D>::type Getter,
-            typename setter<T, D>::type Setter>
+            typename getter<T, D, Attributes>::type Getter,
+            typename setter<T, D, Attributes>::type Setter>
         class dynamic_impl<T, dynamic<D, Attributes>,
-            std::integral_constant<typename getter<T, D>::type, Getter>,
-            std::integral_constant<typename setter<T, D>::type, Setter>> :
+            std::integral_constant<typename getter<T, D, Attributes>::type, Getter>,
+            std::integral_constant<typename setter<T, D, Attributes>::type, Setter>> :
         public settable<T, D, Attributes, Getter, Setter>
         {
         public:
@@ -232,12 +224,12 @@ namespace fresh
         template <class T,
                   class D,
                   class Attributes,
-                  typename getter<T, D>::type Getter>
+                  typename getter<T, D, Attributes>::type Getter>
         class dynamic_impl<T, dynamic<D, Attributes>,
                            std::integral_constant
-                            <typename getter<T, D>::type, Getter>,
+                            <typename getter<T, D, Attributes>::type, Getter>,
                            std::integral_constant
-                            <typename setter<T, D>::type, nullptr>> :
+                            <typename setter<T, D, Attributes>::type, nullptr>> :
             public gettable<T, D, Attributes, Getter>
         {
         public:
@@ -252,10 +244,10 @@ namespace fresh
         struct function_params<dynamic<Owner, Attributes>>
         {
             template <class T>
-            using getter_type = typename getter<T, Owner>::type;
+            using getter_type = typename getter<T, Owner, Attributes>::type;
             
             template <class T>
-            using setter_type = typename setter<T, Owner>::type;
+            using setter_type = typename setter<T, Owner, Attributes>::type;
         };
 #endif
     }

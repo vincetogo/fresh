@@ -21,6 +21,8 @@
 #include "property_details/writable_field.hpp"
 #include "property_details/dynamic_impl.hpp"
 
+#include "type_policy.hpp"
+
 namespace fresh
 {
     // signal types
@@ -33,19 +35,22 @@ namespace fresh
     {
     };
     
-    template <class Event, class Connection, bool ThreadSafe>
+    template <type_policy ReturnTypePolicy, class Event, class Connection, bool ThreadSafe>
     struct property_attributes
     {
         using connection_type = Connection;
         using event_type = Event;
+        static const auto return_type_policy = ReturnTypePolicy;
         static const bool thread_safe = ThreadSafe;
     };
     
-    template <bool ThreadSafe>
+    template <type_policy ReturnTypePolicy, bool ThreadSafe>
     struct basic_observable :
-        public property_attributes<event<void(), ThreadSafe>, connection<ThreadSafe>, ThreadSafe>
+        public property_attributes<ReturnTypePolicy, event<void(), ThreadSafe>, connection<ThreadSafe>, ThreadSafe>
     {
-        using base = property_attributes<event<void(), ThreadSafe>, connection<ThreadSafe>, ThreadSafe>;
+        static_assert(!ThreadSafe || ReturnTypePolicy == copy,
+                      "Thread-safe properties must return a copy.");
+        using base = property_attributes<ReturnTypePolicy, event<void(), ThreadSafe>, connection<ThreadSafe>, ThreadSafe>;
         
         using connection_type = typename base::connection_type;
         using event_type = typename base::event_type;
@@ -59,10 +64,15 @@ namespace fresh
     };
     
     // useful aliases
-    using observable = basic_observable<false>;
-    using thread_safe = property_attributes<null_signal, null_connection, true>;
-    using thread_safe_observable = basic_observable<true>;
-    using unobservable = property_attributes<null_signal, null_connection, false>;
+    using observable = basic_observable<copy, false>;
+    using thread_safe = property_attributes<copy, null_signal, null_connection, true>;
+    using thread_safe_observable = basic_observable<copy, true>;
+    using unobservable = property_attributes<copy, null_signal, null_connection, false>;
+
+    using ref_observable = basic_observable<reference, false>;
+    using ref_thread_safe = property_attributes<reference, null_signal, null_connection, true>;
+    using ref_thread_safe_observable = basic_observable<reference, true>;
+    using ref_unobservable = property_attributes<reference, null_signal, null_connection, false>;
 
     // what we usually want
     using default_attributes = unobservable;
@@ -127,7 +137,7 @@ namespace fresh
     class property;
     
     template <class T, class Owner, class Attributes,
-        typename property_details::getter<T, Owner>::type Getter>
+        typename property_details::getter<T, Owner, Attributes>::type Getter>
         class property<T, dynamic<Owner, Attributes>, Getter> :
     public property_details::gettable<T, Owner, Attributes, Getter>
     {
@@ -139,8 +149,8 @@ namespace fresh
     };
     
     template <class T, class Owner, class Attributes,
-        typename property_details::getter<T, Owner>::type Getter,
-        typename property_details::setter<T, Owner>::type Setter>
+        typename property_details::getter<T, Owner, Attributes>::type Getter,
+        typename property_details::setter<T, Owner, Attributes>::type Setter>
     class property<T, dynamic<Owner, Attributes>, Getter, Setter> :
     public property_details::settable<T, Owner, Attributes, Getter, Setter>
     {
