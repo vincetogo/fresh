@@ -55,7 +55,7 @@ class fresh::event_caller<Impl, ImplBase, ReturnType(Args...), false, Alloc> :
     call(CallHandler forEach, Args... args)
     {
         auto old_can_clean = ((ImplBase*)this)->_can_clean;
-        ((ImplBase*)this)->_can_clean = ((ImplBase*)this)->_clean_guard;
+        ((ImplBase*)this)->_can_clean = false;
         
         for (auto& cnxn_source : ((Impl*)this)->_sources)
         {
@@ -101,15 +101,10 @@ class fresh::event_caller<Impl, ImplBase, ReturnType(Args...), true, Alloc> :
             }
         }
         
-        auto old_can_clean = ((ImplBase*)this)->_can_clean;
-        ((ImplBase*)this)->_can_clean = ((ImplBase*)this)->_clean_guard;
-        
         for (auto& fn : fns)
         {
             ((Impl*)this)->call_function(forEach, *fn, args...);
         }
-        
-        ((ImplBase*)this)->_can_clean = old_can_clean;
         
         lock_type lock(((ImplBase*)this)->_mutex);
         ((ImplBase*)this)->clean();
@@ -159,7 +154,6 @@ protected:
         ThreadSafe, Alloc>;
     
     mutex_type          _mutex;
-    static const bool   _clean_guard = true;
     
 private:
     
