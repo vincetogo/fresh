@@ -73,7 +73,8 @@ namespace fresh
     using ref_thread_safe = property_attributes<reference, null_signal, null_connection, true>;
     using ref_thread_safe_observable = basic_observable<reference, true>;
     using ref_unobservable = property_attributes<reference, null_signal, null_connection, false>;
-
+    using ref = ref_unobservable;
+    
     // what we usually want
     using default_attributes = unobservable;
 
