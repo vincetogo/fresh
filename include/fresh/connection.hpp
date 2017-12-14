@@ -35,7 +35,8 @@ public:
         typename event_details::event_traits<ThreadSafe>::connection_mutex_type;
     using lock_type = std::lock_guard<mutex_type>;
 
-    
+    connection (const connection& other) = delete;
+
     connection(connection&& other)
     {
         lock_type lock1(_mutex);
@@ -64,6 +65,8 @@ public:
         }
     }
     
+    connection& operator= (const connection& other) = delete;
+
     bool operator< (const connection& rhs) const
     {
         lock_type lock1(_mutex);
@@ -87,8 +90,6 @@ private:
     {
         src->_connection = this;
     }
-    
-    connection& operator= (const connection& other) = delete;
     
     void clear()
     {

@@ -138,8 +138,8 @@ namespace fresh
     
     template <class T, class Owner, class Attributes,
         typename property_details::getter<T, Owner, Attributes>::type Getter>
-        class property<T, dynamic<Owner, Attributes>, Getter> :
-    public property_details::gettable<T, Owner, Attributes, Getter>
+    class property<T, dynamic<Owner, Attributes>, Getter> :
+        public property_details::gettable<T, Owner, Attributes, Getter>
     {
     public:
         
@@ -152,7 +152,7 @@ namespace fresh
         typename property_details::getter<T, Owner, Attributes>::type Getter,
         typename property_details::setter<T, Owner, Attributes>::type Setter>
     class property<T, dynamic<Owner, Attributes>, Getter, Setter> :
-    public property_details::settable<T, Owner, Attributes, Getter, Setter>
+        public property_details::settable<T, Owner, Attributes, Getter, Setter>
     {
     public:
         
@@ -241,10 +241,6 @@ namespace fresh
     protected:
         
         using base::operator=;
-        /*using base::operator+=;
-        using base::operator++;
-        using base::operator-=;
-        using base::operator--;*/
         
         T& get_mutable()
         {
