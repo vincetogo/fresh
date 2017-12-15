@@ -9,13 +9,16 @@
 #ifndef fresh_type_policy_h
 #define fresh_type_policy_h
 
-enum class type_policy
+namespace fresh
 {
-    copy,
-    reference
-};
+    enum class type_policy
+    {
+        copy,
+        reference
+    };
 
-const auto copy = type_policy::copy;
-const auto reference = type_policy::reference;
+    const auto copy = type_policy::copy;
+    const auto reference = type_policy::reference;
+}
 
 #endif /* type_policy_h */
