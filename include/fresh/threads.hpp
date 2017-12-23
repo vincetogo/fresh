@@ -13,13 +13,12 @@
 #ifdef __APPLE__
 
 #include <AvailabilityMacros.h>
-    #if MACOSX_DEPLOYMENT_TARGET > MACOS_X_VERSION_10_11
 
-#define FRESH_USE_STD_SHARED_MUTEX 1
-
-    #else
-        #define FRESH_USE_STD_SHARED_MUTEX 0
-    #endif
+#if MACOSX_DEPLOYMENT_TARGET >= MACOS_X_VERSION_10_12
+    #define FRESH_USE_STD_SHARED_MUTEX 1
+#else
+    #define FRESH_USE_STD_SHARED_MUTEX 0
+#endif
 
 #else
     #define FRESH_USE_STD_SHARED_MUTEX 1
